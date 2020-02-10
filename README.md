@@ -23,11 +23,16 @@ TODO
 Проблемы/Баги:
 - на текущий момент - никаких проблем.
 
-## Deployment
+## Требования
 
-- Использует Java 11 (типичный Spring Boot Application).
+- Java 11
+- Spring 2.2.4
 - Имеет постоянный открытый канал с SQL БД.
 - Исходный репозиторий проекта, взятого за основу: https://github.com/pengrad/java-telegram-bot-api.
+
+TODO
+
+## Deployment
 
 TODO
 

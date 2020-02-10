@@ -27,6 +27,7 @@ TODO
 
 - Java 11
 - Spring 2.2.4
+- (java-telegram-bot-api v4.6.0)[https://github.com/pengrad/java-telegram-bot-api]
 - Имеет постоянный открытый канал с SQL БД.
 - Исходный репозиторий проекта, взятого за основу: https://github.com/pengrad/java-telegram-bot-api.
 

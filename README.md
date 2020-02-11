@@ -36,6 +36,7 @@ TODO
 ## Deployment
 
 - добавить `logPath` в `application.properties` с путем к лог файлу (без расширения, дата будет добавлена автоматически)
+- добавить `botToken` в `application.properties` с токеном бота
 
 TODO
 

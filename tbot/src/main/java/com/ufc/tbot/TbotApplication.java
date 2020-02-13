@@ -10,8 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TbotApplication {
 
 	public static void main(String[] args) {
-		AppController appController = new AppController();
-		SpringApplication.run(TbotApplication.class, args);
+        SpringApplication.run(TbotApplication.class, args);
+        AppController appController = new AppController();
+        System.exit(0);
 	}
 
 }

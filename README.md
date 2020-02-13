@@ -36,10 +36,7 @@ TODO
 ## Deployment
 
 - добавить `logPath` в `application.properties` с путем к лог файлу (без расширения, дата будет добавлена автоматически)
-<<<<<<< HEAD
-
-TODO
-=======
+- добавить `botToken` в `application.properties` с токеном бота
 - настроить и добавить следующие конфигурации в `application.properties`:
 ```
 	spring.datasource.url=<jdbc-link>
@@ -51,7 +48,6 @@ TODO
 	spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
 	spring.jpa.hibernate.ddl-auto=update
 ```
->>>>>>> Добавить инструкции в README по настройки соединения с БД
 
 ## Тестирование
 

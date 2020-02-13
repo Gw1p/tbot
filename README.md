@@ -36,8 +36,17 @@ TODO
 ## Deployment
 
 - добавить `logPath` в `application.properties` с путем к лог файлу (без расширения, дата будет добавлена автоматически)
-
-TODO
+- настроить и добавить следующие конфигурации в `application.properties`:
+```
+	spring.datasource.url=<jdbc-link>
+	spring.datasource.username=<database-username>
+	spring.datasource.password=<database-password>
+	spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+	spring.jpa.show-sql=true
+	spring.jpa.properties.hibernate.format_sql=true
+	spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
+	spring.jpa.hibernate.ddl-auto=update
+```
 
 ## Тестирование
 

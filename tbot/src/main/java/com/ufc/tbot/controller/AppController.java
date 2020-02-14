@@ -30,6 +30,7 @@ public class AppController {
      * Бот начинает принимать сообщения
      */
     public void startBot() {
+        botService.botStartPolling();
         botService.botStartListening();
         startedBot = true;
 

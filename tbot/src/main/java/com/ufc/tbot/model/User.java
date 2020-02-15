@@ -30,9 +30,7 @@ public class User implements Serializable {
     @Column(name="approved")
     private boolean approved;
 
-    public User() {
-
-    }
+    public User() {}
 
     public User(long id,
                 String firstName,
@@ -94,5 +92,11 @@ public class User implements Serializable {
 
     public void setApproved(boolean approved) {
         this.approved = approved;
+    }
+
+    @Override
+    public String toString() {
+        return "User " + this.firstName + " " + this.lastName + " ("  + this.id + ") " + this.username +
+                " (approved: " + this.approved + ")";
     }
 }

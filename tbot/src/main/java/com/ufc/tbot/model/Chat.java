@@ -105,4 +105,10 @@ public class Chat implements Serializable {
     public void setInviteLink(String inviteLink) {
         this.inviteLink = inviteLink;
     }
+
+    @Override
+    public String toString() {
+        return "Chat (" + this.id + ") - Type: " + this.chatType + " name " + this.firstName + " " + this.lastName +
+                " (username: " + this.username + ")" + " title " + this.title;
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManagerFactory;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -39,5 +40,24 @@ public class UserDAO extends AbstractDAO<User> {
             logger.info("Could not find user with username: " + username);
         }
         return user;
+    }
+
+    /**
+     * Ищет в БД пользователей, которые подтвержденны и возвращает как список
+     *
+     * @return список подтвержденных пользователей
+     */
+    public List<User> getApprovedUsers() {
+        Session session = this.sessionFactory.getCurrentSession();
+        List<User> users = new ArrayList<>();
+
+        Query q = session.createQuery("from User where approved = 1");
+        List<Object> results = q.list();
+
+        for (Object obj : q.list()) {
+            users.add((User) obj);
+        }
+        logger.info("Found approved Users: " + users.size());
+        return users;
     }
 }

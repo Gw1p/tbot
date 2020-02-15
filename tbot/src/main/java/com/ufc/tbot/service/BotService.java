@@ -7,12 +7,14 @@ import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 import com.ufc.tbot.model.MessageOut;
+import com.ufc.tbot.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -29,6 +31,9 @@ public class BotService {
     @Autowired
     private MessageOutService messageOutService;
 
+    @Autowired
+    private UserService userService;
+
     @Value("${botToken}")
     private String botToken;
 
@@ -43,6 +48,9 @@ public class BotService {
     // Находится ли бот в режиме выключения? (выключится через X секунд после команды)
     private boolean shuttingDown = false;
 
+    // Пользователи, которым Бот может отправлять сообщения
+    private HashMap<Long, User> approvedUsers = new HashMap<Long, User>();
+
     // Как часто (в миллисекундах) Бот запрашивает сообщения в БД
     private static int POLLING_FREQUENCY = 2000;
 
@@ -55,6 +63,13 @@ public class BotService {
         telegramBot = new TelegramBot(botToken);
     }
 
+    /**
+     * Отправляет сообщение msg в чат chatId
+     *
+     * @param chatId id чата, в который отправить сообщение
+     * @param msg сообщение, которое надо отправить
+     * @return true/false отправилось ли сообщение успешно?
+     */
     private boolean sendMessage(long chatId, String msg) {
         SendMessage request = new SendMessage(chatId, msg)
                 .parseMode(ParseMode.HTML)
@@ -66,12 +81,30 @@ public class BotService {
         return sendResponse.isOk();
     }
 
+    /**
+     * Обновляет MessageOut и подтверждает, что сообщение было отправлено
+     *
+     * @param messageOut которое надо обновить
+     */
     private void messageOutSuccess(MessageOut messageOut) {
         messageOut.setSent(true);
         messageOut.setMessageDate(new Date());
         messageOutService.updateMessageOut(messageOut);
     }
 
+    /**
+     * Инициализирует бота и получает список пользователей, которым можно отправлять сообщения
+     */
+    public void botInit() {
+        List<User> retrievedUsers = userService.getApprovedUsers();
+        for (User user : retrievedUsers) {
+            approvedUsers.put(user.getId(), user);
+        }
+    }
+
+    /**
+     * Начинает поллить ДБ на сообщения, которые надо отправить
+     */
     public void botStartPolling() {
         polling = true;
         LOGGER.info("Bot Start Polling DB for MessagesOut");
@@ -115,6 +148,9 @@ public class BotService {
         thread.start();
     }
 
+    /**
+     * Прекращает поллить ДБ на сообщения, которые надо отправить
+     */
     public void botStopPolling() {
         polling = false;
         LOGGER.info("Bot Stop Polling DB for MessagesOut");
@@ -138,10 +174,17 @@ public class BotService {
 
                 LOGGER.info("TelegramBot: got  " + updates.size() + " updates");
                 for (Update update : updates) {
+
                     LOGGER.info("Update summary: " + update.toString());
                     LOGGER.info(update.message().from().firstName() + " " + update.message().from().lastName()
                             + "(" + update.message().from().id() + ")" + " in chat " +
                             update.message().chat().id() + " says: " + update.message().text());
+
+                    // Нужно убедиться, что пользователь был подтвержден для использования Бота
+                    if (!approvedUsers.containsKey(Integer.toUnsignedLong(update.message().from().id()))) {
+                        LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
+                        break;
+                    }
 
                     // При получении команды, останавливаем работу Бота
                     if (update.message().text().equals("stop")) {
@@ -152,6 +195,7 @@ public class BotService {
                             public void run() {
                                 try {
                                     shuttingDown = true;
+                                    polling = false;
                                     LOGGER.info("Stopping bot in 3...");
                                     Thread.sleep(1000);
                                     LOGGER.info("Stopping bot in 2...");
@@ -162,7 +206,6 @@ public class BotService {
                                     e.printStackTrace();
                                 }
                                 listening = false;
-                                polling = false;
                             }
                         };
                         Thread thread = new Thread(runnable);
@@ -182,12 +225,12 @@ public class BotService {
     }
 
     /**
-     * Принимает ли бот сообщения?
+     * Принимает ли бот сообщения? Поллит ли бот ДБ?
      *
-     * @return true/false в зависимости от того, принимает ли бот сообщения
+     * @return true/false в зависимости от того, работает ли Бот
      */
-    public boolean isBotListening() {
-        return this.listening;
+    public boolean isBotWorking() {
+        return this.listening || this.polling;
     }
 
 }

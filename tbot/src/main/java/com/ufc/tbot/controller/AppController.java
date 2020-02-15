@@ -30,11 +30,12 @@ public class AppController {
      * Бот начинает принимать сообщения
      */
     public void startBot() {
+        botService.botInit();
         botService.botStartPolling();
         botService.botStartListening();
         startedBot = true;
 
-        while (botService.isBotListening()) {}
+        while (botService.isBotWorking()) {}
 
         botService.botStopListening();
     }

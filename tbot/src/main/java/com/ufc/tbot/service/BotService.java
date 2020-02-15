@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
+import com.ufc.tbot.model.MessageIn;
 import com.ufc.tbot.model.MessageOut;
 import com.ufc.tbot.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class BotService {
     private MessageOutService messageOutService;
 
     @Autowired
+    private MessageInService messageInService;
+
+    @Autowired
     private UserService userService;
 
     @Value("${botToken}")
@@ -49,7 +53,7 @@ public class BotService {
     private boolean shuttingDown = false;
 
     // Пользователи, которым Бот может отправлять сообщения
-    private HashMap<Long, User> approvedUsers = new HashMap<Long, User>();
+    private HashMap<Long, Boolean> users = new HashMap<Long, Boolean>();
 
     // Как часто (в миллисекундах) Бот запрашивает сообщения в БД
     private static int POLLING_FREQUENCY = 2000;
@@ -96,9 +100,9 @@ public class BotService {
      * Инициализирует бота и получает список пользователей, которым можно отправлять сообщения
      */
     public void botInit() {
-        List<User> retrievedUsers = userService.getApprovedUsers();
+        List<User> retrievedUsers = userService.findAll();
         for (User user : retrievedUsers) {
-            approvedUsers.put(user.getId(), user);
+            users.put(user.getId(), user.isApproved());
         }
     }
 
@@ -172,7 +176,7 @@ public class BotService {
                     return UpdatesListener.CONFIRMED_UPDATES_NONE;
                 }
 
-                LOGGER.info("TelegramBot: got  " + updates.size() + " updates");
+                LOGGER.info("TelegramBot: got " + updates.size() + " updates");
                 for (Update update : updates) {
 
                     LOGGER.info("Update summary: " + update.toString());
@@ -181,10 +185,30 @@ public class BotService {
                             update.message().chat().id() + " says: " + update.message().text());
 
                     // Нужно убедиться, что пользователь был подтвержден для использования Бота
-                    if (!approvedUsers.containsKey(Integer.toUnsignedLong(update.message().from().id()))) {
+                    long userId = Integer.toUnsignedLong(update.message().from().id());
+
+                    if (!users.containsKey(userId)) {
+                        User user = new User(update.message().from().id(),
+                                update.message().from().firstName(),
+                                update.message().from().lastName(),
+                                update.message().from().username(),
+                                new Date(),
+                                false);
+                        userService.save(user);
+                        users.put(userId, false);
+                    }
+
+                    if (!users.get(userId)) {
                         LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
                         break;
                     }
+
+                    MessageIn messageIn = new MessageIn(update.message().messageId(),
+                            update.message().text(),
+                            new Date(),
+                            update.message().chat().id(),
+                            update.message().from().id());
+                    messageInService.save(messageIn);
 
                     // При получении команды, останавливаем работу Бота
                     if (update.message().text().equals("stop")) {

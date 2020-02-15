@@ -2,7 +2,7 @@ CREATE TABLE Users(
 	id bigint NOT NULL PRIMARY KEY,
     firstName VARCHAR(255),
     lastName VARCHAR(255),
-    username VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(255),
 	firstMessage DATETIME NOT NULL,
 	approved BIT NOT NULL DEFAULT(0)
 );
@@ -16,14 +16,14 @@ CREATE TABLE Chats(
     chatType VARCHAR(10) NOT NULL, -- Private, group, supergroup, channel
 	firstName VARCHAR(255),
     lastName VARCHAR(255),
-    username VARCHAR(255) UNIQUE,
+    username VARCHAR(255),
     title VARCHAR(255),
 	inviteLink VARCHAR(255)
 );
 GO
 
 -- Какие есть чаты с определенным пользователем
-CREATE TABLE User_Chats(
+CREATE TABLE UserChats(
 	id bigint NOT NULL PRIMARY KEY,
 	userId bigint NOT NULL FOREIGN KEY REFERENCES Users(id),
 	chatId bigint NOT NULL FOREIGN KEY REFERENCES Chats(id),

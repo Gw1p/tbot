@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManagerFactory;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -64,7 +65,12 @@ public abstract class AbstractDAO<T extends Serializable> {
     }
 
     public T findById(long id) {
-        return (T) getCurrentSession().get(clazz, id);
+        try {
+            return (T) getCurrentSession().get(clazz, id);
+        } catch (Exception ex) {
+            logger.warning("Could not find by id: " + id);
+            return null;
+        }
     }
 
     /**
@@ -73,7 +79,12 @@ public abstract class AbstractDAO<T extends Serializable> {
      * @return все объекты класса T из БД (как List<Object>)
      */
     public List<T> findAll() {
-        return getCurrentSession().createQuery("from " + clazz.getName()).list();
+        try {
+            return getCurrentSession().createQuery("from " + clazz.getName()).list();
+        } catch (Exception ex) {
+            logger.warning("Could not findAll: " + clazz.getName());
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -82,8 +93,12 @@ public abstract class AbstractDAO<T extends Serializable> {
      * @param entity которую надо сохранить в БД
      */
     public void save(T entity) {
-        getCurrentSession().persist(entity);
-        logger.info("Saved " + clazz.getName() + ": " + entity);
+        try{
+            getCurrentSession().persist(entity);
+            logger.info("Saved " + clazz.getName() + ": " + entity);
+        } catch (Exception ex) {
+            logger.warning("Could not save " + clazz.getName() + ": " + entity);
+        }
     }
 
     /**
@@ -93,7 +108,12 @@ public abstract class AbstractDAO<T extends Serializable> {
      * @return обновленную запись в БД
      */
     public T update(T entity) {
-        return (T) getCurrentSession().merge(entity);
+        try {
+            return (T) getCurrentSession().merge(entity);
+        } catch (Exception ex) {
+            logger.warning("Could not update " + clazz.getName() + ": " + entity);
+            return null;
+        }
     }
 
     /**
@@ -102,8 +122,12 @@ public abstract class AbstractDAO<T extends Serializable> {
      * @param entity которую надо удалить из БД
      */
     public void delete (T entity) {
-        getCurrentSession().delete(entity);
-        logger.info("Deleted " + clazz.getName() + ": " + entity);
+        try {
+            getCurrentSession().delete(entity);
+            logger.info("Deleted " + clazz.getName() + ": " + entity);
+        } catch (Exception ex) {
+            logger.warning("Could not delete " + clazz.getName() + ": " + entity);
+        }
     }
 
     /**
@@ -112,9 +136,13 @@ public abstract class AbstractDAO<T extends Serializable> {
      * @param id объекта, который надо удалить из БД
      */
     public void deleteById(long id) {
-        final T entity = findById(id);
-        delete(entity);
-        logger.info("Deleted " + clazz.getName() + " with id " + id);
+        try {
+            final T entity = findById(id);
+            delete(entity);
+            logger.info("Deleted " + clazz.getName() + " with id " + id);
+        } catch (Exception ex) {
+            logger.warning("Could not delete " + clazz.getName());
+        }
     }
 
 }

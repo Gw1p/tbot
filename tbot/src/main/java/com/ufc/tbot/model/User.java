@@ -85,7 +85,7 @@ public class User implements Serializable, Cloneable {
     }
 
     public List<UserPermission> getUserPermissions() {
-        if (userPermissions == null) {
+        if (this.userPermissions == null) {
             return new ArrayList<>();
         }
         return userPermissions;
@@ -100,11 +100,13 @@ public class User implements Serializable, Cloneable {
      * @return true/false есть ли у пользователя права?
      */
     public boolean hasPermission(PermissionType permissionType) {
-        for (UserPermission userPermission : getUserPermissions()) {
-            if (userPermission.getPermission().getPermission().equals(permissionType)) {
-                return true;
+        try {
+            for (UserPermission userPermission : getUserPermissions()) {
+                if (userPermission.getPermission().getPermission().equals(permissionType)) {
+                    return true;
+                }
             }
-        }
+        } catch (NullPointerException ex) {}
         return false;
     }
 

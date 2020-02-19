@@ -25,7 +25,6 @@ public class MessageOutDAO extends AbstractDAO<MessageOut> {
      * @return List<MessageOut> список с MessageOut, которые надо отправить
      */
     public List<MessageOut> getAwaitingMessages() {
-        logger.info("Retrieving awaiting messages from db");
         Session session = this.sessionFactory.getCurrentSession();
 
         List<MessageOut> awaitingMessages = new ArrayList<>();
@@ -35,7 +34,9 @@ public class MessageOutDAO extends AbstractDAO<MessageOut> {
             awaitingMessages.add((MessageOut) obj);
         }
 
-        logger.info("Retrieved " + awaitingMessages.size() + " MessageOut where sent = 0");
+        if (awaitingMessages.size() > 0) {
+            logger.info("Retrieved " + awaitingMessages.size() + " MessageOut where sent = 0");
+        }
 
         return awaitingMessages;
     }

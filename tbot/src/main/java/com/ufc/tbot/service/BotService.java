@@ -152,6 +152,7 @@ public class BotService {
      * Инициализирует бота и получает список пользователей, которым можно отправлять сообщения
      */
     public void botInit() {
+        users = new HashMap<>();
         List<User> retrievedUsers = userService.findAll();
         for (User user : retrievedUsers) {
             users.put(user.getId(), user);
@@ -169,32 +170,36 @@ public class BotService {
             @Override
             public void run() {
                 while (polling) {
-                    LOGGER.info("Polling db for awaiting messages...");
-                    List<MessageOut> awaitingMessages = messageOutService.getAwaitingMessages();
+                    try {
+                        LOGGER.info("Polling db for awaiting messages...");
+                        List<MessageOut> awaitingMessages = messageOutService.getAwaitingMessages();
 
-                    if (awaitingMessages.size() == 0) {
-                        LOGGER.info("No awaiting messages found");
-                    }
+                        if (awaitingMessages.size() == 0) {
+                            LOGGER.info("No awaiting messages found");
+                        }
 
-                    for (MessageOut messageOut : awaitingMessages) {
-                        int maxTries = 3;
-                        for (int i = 0; i < maxTries; i++) {
-                            LOGGER.info("Attempt (" + i + ") to send message " + messageOut.getMessage() + " to chat " + messageOut.getChatId());
-                            boolean messageSuccess = sendMessage(messageOut.getChatId(), messageOut.getMessage());
+                        for (MessageOut messageOut : awaitingMessages) {
+                            int maxTries = 3;
+                            for (int i = 0; i < maxTries; i++) {
+                                LOGGER.info("Attempt (" + i + ") to send message " + messageOut.getMessage() + " to chat " + messageOut.getChatId());
+                                boolean messageSuccess = sendMessage(messageOut.getChatId(), messageOut.getMessage());
 
-                            if (messageSuccess) {
-                                LOGGER.info("Message sent successfully");
-                                messageOutSuccess(messageOut);
-                                break;
-                            } else if (i < maxTries - 1) {
-                                LOGGER.warning("Unsuccessful, retrying");
+                                if (messageSuccess) {
+                                    LOGGER.info("Message sent successfully");
+                                    messageOutSuccess(messageOut);
+                                    break;
+                                } else if (i < maxTries - 1) {
+                                    LOGGER.warning("Unsuccessful, retrying");
+                                }
                             }
                         }
-                    }
-                    try {
-                        Thread.sleep(POLLING_FREQUENCY);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        try {
+                            Thread.sleep(POLLING_FREQUENCY);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (Exception ex) {
+                        LOGGER.warning("Something went terribly wrong. Polling not working.");
                     }
                 }
 
@@ -228,93 +233,115 @@ public class BotService {
                     return UpdatesListener.CONFIRMED_UPDATES_NONE;
                 }
 
-                LOGGER.info("TelegramBot: got " + updates.size() + " updates");
-                for (Update update : updates) {
-
-                    LOGGER.info("Update summary: " + update.toString());
-                    LOGGER.info(update.message().from().firstName() + " " + update.message().from().lastName()
-                            + "(" + update.message().from().id() + ")" + " in chat " +
-                            update.message().chat().id() + " says: " + update.message().text());
-
-                    // Нужно убедиться, что пользователь был подтвержден для использования Бота
-                    long userId = Integer.toUnsignedLong(update.message().from().id());
-                    Chat chat = new Chat(update.message().chat().id(),
-                            update.message().chat().type().toString(),
-                            update.message().chat().firstName(),
-                            update.message().chat().lastName(),
-                            update.message().chat().username(),
-                            update.message().chat().title(),
-                            update.message().chat().inviteLink());
-                    chatService.saveOrUpdate(chat);
-
-                    MessageIn messageIn = new MessageIn(update.message().messageId(),
-                            update.message().text(),
-                            new Date(),
-                            update.message().chat().id(),
-                            update.message().from().id());
-                    messageInService.saveOrUpdate(messageIn);
-
-                    UserChat userChat = new UserChat(update.message().from().id(),
-                            update.message().chat().id(),
-                            update.message().chat().type().toString(),
-                            new Date());
-                    userChatService.saveOrUpdate(userChat);
-
-                    if (!users.containsKey(userId)) {
-                        User user = new User(update.message().from().id(),
-                                update.message().from().firstName(),
-                                update.message().from().lastName(),
-                                update.message().from().username(),
-                                new Date());
-                        userService.save(user);
-                        users.put(userId, user);
+                try {
+                    if (users.isEmpty()) {
+                        LOGGER.warning("Users empty. Reinitialising");
+                        botInit();
                     }
 
-                    // Проверка Прав
-                    if (!users.get(userId).hasPermission(PermissionType.USER)) {
-                        LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
-                        break;
-                    }
+                    LOGGER.info("TelegramBot: got " + updates.size() + " updates");
+                    for (Update update : updates) {
 
-                    boolean foundCommand = false;
-                    // Проверяем комманды, которые пользователи уже начали
-                    if (userInteractions.containsKey(userChat)) {
-                        Conversation conversation = userInteractions.get(userChat);
-                        foundCommand = true;
-                        Response response = conversation.step(update.message().text(), users.get(userId), new ArrayList<>(users.values()));
-                        LOGGER.info("Step");
-                        parseResponse(response, users.get(userId), update.message().chat().id());
-                        if (conversation.finished()) {
-                            userInteractions.remove(userChat);
+                        LOGGER.info("Update summary: " + update.toString());
+                        LOGGER.info(update.message().from().firstName() + " " + update.message().from().lastName()
+                                + "(" + update.message().from().id() + ")" + " in chat " +
+                                update.message().chat().id() + " says: " + update.message().text());
+
+                        // Нужно убедиться, что пользователь был подтвержден для использования Бота
+                        long userId = Integer.toUnsignedLong(update.message().from().id());
+                        Chat chat = new Chat(update.message().chat().id(),
+                                update.message().chat().type().toString(),
+                                update.message().chat().firstName(),
+                                update.message().chat().lastName(),
+                                update.message().chat().username(),
+                                update.message().chat().title(),
+                                update.message().chat().inviteLink());
+                        try {
+                            chatService.saveOrUpdate(chat);
+                        } catch (Exception ex) {
+                            LOGGER.warning("Cannot save chat: " + ex.getMessage());
                         }
-                    } else {
-                        // Проверяем существующие команды
-                        for (Conversation command : availableCommands) {
-                            LOGGER.info("Cmd " + command.getClass().getName() +
-                                    " can start: " + command.canStart(update.message().text(), users.get(userId)));
-                            if (command.canStart(update.message().text(), users.get(userId))) {
-                                try {
-                                    foundCommand = true;
-                                    Conversation newCommand = (Conversation) command.clone();
-                                    autowiredCapableBeanFactory.autowireBean(newCommand);
-                                    Response response = newCommand.step(update.message().text(),
-                                            users.get(userId),
-                                            new ArrayList<>(users.values()));
-                                    parseResponse(response, users.get(userId), update.message().chat().id());
-                                    if (!newCommand.finished()) {
-                                        userInteractions.put(userChat, newCommand);
+
+                        MessageIn messageIn = new MessageIn(update.message().messageId(),
+                                update.message().text(),
+                                new Date(),
+                                update.message().chat().id(),
+                                update.message().from().id());
+                        try {
+                            messageInService.saveOrUpdate(messageIn);
+                        } catch (Exception ex) {
+                            LOGGER.warning("Cannot save message: " + ex.getMessage());
+                        }
+
+
+                        UserChat userChat = new UserChat(update.message().from().id(),
+                                update.message().chat().id(),
+                                update.message().chat().type().toString(),
+                                new Date());
+                        try {
+                            userChatService.saveOrUpdate(userChat);
+                        } catch (Exception ex) {
+                            LOGGER.warning("Cannot save userchat: " + ex.getMessage());
+                        }
+
+                        if (!users.containsKey(userId)) {
+                            User user = new User(update.message().from().id(),
+                                    update.message().from().firstName(),
+                                    update.message().from().lastName(),
+                                    update.message().from().username(),
+                                    new Date());
+                            userService.save(user);
+                            users.put(userId, user);
+                        }
+
+                        // Проверка Прав
+                        if (!users.get(userId).hasPermission(PermissionType.USER)) {
+                            LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
+                            break;
+                        }
+
+                        boolean foundCommand = false;
+                        // Проверяем комманды, которые пользователи уже начали
+                        if (userInteractions.containsKey(userChat)) {
+                            Conversation conversation = userInteractions.get(userChat);
+                            foundCommand = true;
+                            Response response = conversation.step(update.message().text(), users.get(userId), new ArrayList<>(users.values()));
+                            LOGGER.info("Step");
+                            parseResponse(response, users.get(userId), update.message().chat().id());
+                            if (conversation.finished()) {
+                                userInteractions.remove(userChat);
+                            }
+                        } else {
+                            // Проверяем существующие команды
+                            for (Conversation command : availableCommands) {
+                                LOGGER.info("Cmd " + command.getClass().getName() +
+                                        " can start: " + command.canStart(update.message().text(), users.get(userId)));
+                                if (command.canStart(update.message().text(), users.get(userId))) {
+                                    try {
+                                        foundCommand = true;
+                                        Conversation newCommand = (Conversation) command.clone();
+                                        autowiredCapableBeanFactory.autowireBean(newCommand);
+                                        Response response = newCommand.step(update.message().text(),
+                                                users.get(userId),
+                                                new ArrayList<>(users.values()));
+                                        parseResponse(response, users.get(userId), update.message().chat().id());
+                                        if (!newCommand.finished()) {
+                                            userInteractions.put(userChat, newCommand);
+                                        }
+                                    } catch (CloneNotSupportedException e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (CloneNotSupportedException e) {
-                                    e.printStackTrace();
                                 }
                             }
                         }
-                    }
 
-                    if (!foundCommand) {
-                        sendMessage(update.message().chat().id(), "Не понял комманду. " +
-                                "Чтобы узнать список комманд, напишите /помощь.");
+                        if (!foundCommand && update.message().text().charAt(0) == '/') {
+                            sendMessage(update.message().chat().id(), "Не понял комманду. " +
+                                    "Чтобы узнать список комманд, напишите /помощь.");
+                        }
                     }
+                } catch (Exception ex) {
+                    LOGGER.warning ("Something went terribly wrong. Cannot receive messages: " + ex.getMessage());
                 }
                 return UpdatesListener.CONFIRMED_UPDATES_ALL;
             }

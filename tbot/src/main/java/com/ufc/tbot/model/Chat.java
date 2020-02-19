@@ -14,13 +14,13 @@ public class Chat implements Serializable {
     @Column(name="id")
     private long id;
 
-    @Column(name="chat_type")
+    @Column(name="chatType")
     private String chatType;
 
-    @Column(name="first_name")
+    @Column(name="firstName")
     private String firstName;
 
-    @Column(name="last_name")
+    @Column(name="lastName")
     private String lastName;
 
     @Column(name="username", unique=true)
@@ -29,7 +29,7 @@ public class Chat implements Serializable {
     @Column(name="title")
     private String title;
 
-    @Column(name="invite_link")
+    @Column(name="inviteLink")
     private String inviteLink;
 
     public Chat() {}

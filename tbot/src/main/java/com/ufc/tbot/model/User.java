@@ -1,34 +1,34 @@
 package com.ufc.tbot.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "Users")
-public class User implements Serializable {
+public class User implements Serializable, Cloneable {
 
     @Id
     @Column(name="id")
     private long id;
 
-    @Column(name="first_name")
+    @Column(name="firstName")
     private String firstName;
 
-    @Column(name="last_name")
+    @Column(name="lastName")
     private String lastName;
 
-    @Column(name="username", unique=true)
+    @Column(name="username")
     private String username;
 
-    @Column(name="first_message")
+    @Column(name="firstMessage")
     private Date firstMessage;
 
-    @Column(name="approved")
-    private boolean approved;
+    @OneToMany(fetch = FetchType.EAGER,
+            mappedBy = "user")
+    private List<UserPermission> userPermissions;
 
     public User() {}
 
@@ -36,21 +36,19 @@ public class User implements Serializable {
                 String firstName,
                 String lastName,
                 String username,
-                Date firstMessage,
-                boolean approved) {
+                Date firstMessage) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.firstMessage = firstMessage;
-        this.approved = approved;
     }
 
     public long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -86,17 +84,42 @@ public class User implements Serializable {
         this.firstMessage = firstMessage;
     }
 
-    public boolean isApproved() {
-        return approved;
+    public List<UserPermission> getUserPermissions() {
+        if (userPermissions == null) {
+            return new ArrayList<>();
+        }
+        return userPermissions;
     }
 
-    public void setApproved(boolean approved) {
-        this.approved = approved;
+    public void setUserPermissions(List<UserPermission> userPermissions) { this.userPermissions = userPermissions; }
+
+    /**
+     * Есть ли у пользователя права?
+     *
+     * @param permissionType права, на которые проверяют пользователя
+     * @return true/false есть ли у пользователя права?
+     */
+    public boolean hasPermission(PermissionType permissionType) {
+        for (UserPermission userPermission : getUserPermissions()) {
+            if (userPermission.getPermission().getPermission().equals(permissionType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return "User " + this.firstName + " " + this.lastName + " ("  + this.id + ") " + this.username +
-                " (approved: " + this.approved + ")";
+        return "User " + this.firstName + " " + this.lastName + " ("  + this.id + ") " + this.username;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        User user2 = (User) super.clone();
+        user2.userPermissions = new ArrayList<>();
+        for (UserPermission userPermission : getUserPermissions()) {
+            user2.userPermissions.add((UserPermission) userPermission.clone());
+        }
+        return user2;
     }
 }

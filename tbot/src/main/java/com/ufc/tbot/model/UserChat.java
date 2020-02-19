@@ -1,8 +1,6 @@
 package com.ufc.tbot.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -11,6 +9,8 @@ import java.util.Date;
 public class UserChat implements Serializable {
 
     @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name= "id", updatable = false, nullable = false)
     private long id;
     private long userId;
     private long chatId;
@@ -19,8 +19,7 @@ public class UserChat implements Serializable {
 
     public UserChat() {}
 
-    public UserChat(long id, long userId, long chatId, String chatType, Date discoveredDate) {
-        this.id = id;
+    public UserChat(long userId, long chatId, String chatType, Date discoveredDate) {
         this.userId = userId;
         this.chatId = chatId;
         this.chatType = chatType;
@@ -65,5 +64,22 @@ public class UserChat implements Serializable {
 
     public void setDiscoveredDate(Date discoveredDate) {
         this.discoveredDate = discoveredDate;
+    }
+
+    @Override
+    public boolean equals(Object v) {
+        boolean retVal = false;
+
+        if (v instanceof UserChat) {
+            UserChat userChat = (UserChat) v;
+            retVal = userChat.userId == this.userId && userChat.chatId == this.chatId;
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (this.userId ^ this.chatId);
     }
 }

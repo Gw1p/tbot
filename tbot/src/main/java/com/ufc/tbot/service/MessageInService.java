@@ -30,7 +30,33 @@ public class MessageInService {
      * @param messageIn которое надо сохранить
      */
     public void save(MessageIn messageIn) {
-        LOGGER.info("Saving " + messageIn + " in DB");
+        LOGGER.info("Saving: " + messageIn);
         messageInDAO.save(messageIn);
+    }
+
+    /**
+     * Сохраняет MessageIn в БД.
+     * Если он уже существует, обновляет
+     *
+     * @param messageIn
+     */
+    public void saveOrUpdate(MessageIn messageIn) {
+        MessageIn existingMessageIn = messageInDAO.findById(messageIn.getId());
+        if (existingMessageIn == null) {
+            messageInDAO.save(messageIn);
+        } else {
+            messageInDAO.update(messageIn);
+        }
+    }
+
+    /**
+     * Обновляет MessageIn в БД
+     *
+     * @param messageIn объект, который надо обновить в БД
+     * @return обновленный MessageIn
+     */
+    public MessageIn update(MessageIn messageIn) {
+        LOGGER.info("Updating: " + messageIn);
+        return messageInDAO.update(messageIn);
     }
 }

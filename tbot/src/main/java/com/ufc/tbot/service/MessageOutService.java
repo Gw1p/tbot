@@ -32,9 +32,7 @@ public class MessageOutService {
      */
     public List<MessageOut> getAwaitingMessages() {
         LOGGER.info("Retrieving awaiting messages");
-        LOGGER.info(messageOutDAO.toString());
         List<MessageOut> myList = messageOutDAO.getAwaitingMessages();
-        LOGGER.info("Retrieved awaiting messages");
         return myList;
     }
 

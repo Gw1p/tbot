@@ -3,17 +3,26 @@ package com.ufc.tbot.service;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.model.request.Keyboard;
 import com.pengrad.telegrambot.model.request.ParseMode;
+import com.pengrad.telegrambot.model.request.ReplyKeyboardRemove;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
-import com.ufc.tbot.model.MessageIn;
-import com.ufc.tbot.model.MessageOut;
-import com.ufc.tbot.model.User;
+import com.ufc.tbot.conversation.ActionType;
+import com.ufc.tbot.conversation.Conversation;
+import com.ufc.tbot.conversation.Response;
+import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.conversation.commands.EditUserCommand;
+import com.ufc.tbot.conversation.commands.ListCommandsCommand;
+import com.ufc.tbot.conversation.commands.StopBotCommand;
+import com.ufc.tbot.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +47,18 @@ public class BotService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private ChatService chatService;
+
+    @Autowired
+    private UserChatService userChatService;
+
+    @Autowired
+    private UserPermissionService userPermissionService;
+
+    @Autowired
+    private AutowireCapableBeanFactory autowiredCapableBeanFactory;
+
     @Value("${botToken}")
     private String botToken;
 
@@ -52,8 +73,13 @@ public class BotService {
     // Находится ли бот в режиме выключения? (выключится через X секунд после команды)
     private boolean shuttingDown = false;
 
-    // Пользователи, которым Бот может отправлять сообщения
-    private HashMap<Long, Boolean> users = new HashMap<Long, Boolean>();
+    // Пользователи приложения
+    private HashMap<Long, User> users = new HashMap<Long, User>();
+
+    private List<Conversation> availableCommands = new ArrayList<>();
+
+    // Если пользователь с Id начал Conversation, то следующий ответ автоматически пойдет в этот Conversation
+    private HashMap<UserChat, Conversation> userInteractions = new HashMap<>();
 
     // Как часто (в миллисекундах) Бот запрашивает сообщения в БД
     private static int POLLING_FREQUENCY = 2000;
@@ -64,6 +90,11 @@ public class BotService {
     public void init() {
         LOGGER = loggerService.getLogger(BotService.class.getName(), true);
         LOGGER.info("Telegram Bot initialised");
+
+        availableCommands.add(new ListCommandsCommand());
+        availableCommands.add(new StopBotCommand());
+        availableCommands.add(new EditUserCommand());
+
         telegramBot = new TelegramBot(botToken);
     }
 
@@ -78,7 +109,28 @@ public class BotService {
         SendMessage request = new SendMessage(chatId, msg)
                 .parseMode(ParseMode.HTML)
                 .disableWebPagePreview(true)
-                .disableNotification(false);
+                .disableNotification(false)
+                .replyMarkup(new ReplyKeyboardRemove());
+
+        SendResponse sendResponse = telegramBot.execute(request);
+        LOGGER.info("Sending message (" + chatId + "): " + sendResponse.message());
+        return sendResponse.isOk();
+    }
+
+    /**
+     * Отправляет сообщение msg в чат chatId
+     *
+     * @param chatId id чата, в который отправить сообщение
+     * @param msg сообщение, которое надо отправить
+     * @param keyboard кастомная клавиатура, с которой ответить пользователю
+     * @return true/false отправилось ли сообщение успешно?
+     */
+    private boolean sendMessage(long chatId, String msg , Keyboard keyboard) {
+        SendMessage request = new SendMessage(chatId, msg)
+                .parseMode(ParseMode.HTML)
+                .disableWebPagePreview(false)
+                .disableNotification(false)
+                .replyMarkup(keyboard);
 
         SendResponse sendResponse = telegramBot.execute(request);
         LOGGER.info("Response message: " + sendResponse.message());
@@ -102,7 +154,7 @@ public class BotService {
     public void botInit() {
         List<User> retrievedUsers = userService.findAll();
         for (User user : retrievedUsers) {
-            users.put(user.getId(), user.isApproved());
+            users.put(user.getId(), user);
         }
     }
 
@@ -186,59 +238,161 @@ public class BotService {
 
                     // Нужно убедиться, что пользователь был подтвержден для использования Бота
                     long userId = Integer.toUnsignedLong(update.message().from().id());
-
-                    if (!users.containsKey(userId)) {
-                        User user = new User(update.message().from().id(),
-                                update.message().from().firstName(),
-                                update.message().from().lastName(),
-                                update.message().from().username(),
-                                new Date(),
-                                false);
-                        userService.save(user);
-                        users.put(userId, false);
-                    }
-
-                    if (!users.get(userId)) {
-                        LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
-                        break;
-                    }
+                    Chat chat = new Chat(update.message().chat().id(),
+                            update.message().chat().type().toString(),
+                            update.message().chat().firstName(),
+                            update.message().chat().lastName(),
+                            update.message().chat().username(),
+                            update.message().chat().title(),
+                            update.message().chat().inviteLink());
+                    chatService.saveOrUpdate(chat);
 
                     MessageIn messageIn = new MessageIn(update.message().messageId(),
                             update.message().text(),
                             new Date(),
                             update.message().chat().id(),
                             update.message().from().id());
-                    messageInService.save(messageIn);
+                    messageInService.saveOrUpdate(messageIn);
 
-                    // При получении команды, останавливаем работу Бота
-                    if (update.message().text().equals("stop")) {
-                        LOGGER.info("Stopping bot...");
+                    UserChat userChat = new UserChat(update.message().from().id(),
+                            update.message().chat().id(),
+                            update.message().chat().type().toString(),
+                            new Date());
+                    userChatService.saveOrUpdate(userChat);
 
-                        Runnable runnable = new Runnable() {
-                            @Override
-                            public void run() {
+                    if (!users.containsKey(userId)) {
+                        User user = new User(update.message().from().id(),
+                                update.message().from().firstName(),
+                                update.message().from().lastName(),
+                                update.message().from().username(),
+                                new Date());
+                        userService.save(user);
+                        users.put(userId, user);
+                    }
+
+                    // Проверка Прав
+                    if (!users.get(userId).hasPermission(PermissionType.USER)) {
+                        LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
+                        break;
+                    }
+
+                    boolean foundCommand = false;
+                    // Проверяем комманды, которые пользователи уже начали
+                    if (userInteractions.containsKey(userChat)) {
+                        Conversation conversation = userInteractions.get(userChat);
+                        foundCommand = true;
+                        Response response = conversation.step(update.message().text(), users.get(userId), new ArrayList<>(users.values()));
+                        LOGGER.info("Step");
+                        parseResponse(response, users.get(userId), update.message().chat().id());
+                        if (conversation.finished()) {
+                            userInteractions.remove(userChat);
+                        }
+                    } else {
+                        // Проверяем существующие команды
+                        for (Conversation command : availableCommands) {
+                            LOGGER.info("Cmd " + command.getClass().getName() +
+                                    " can start: " + command.canStart(update.message().text(), users.get(userId)));
+                            if (command.canStart(update.message().text(), users.get(userId))) {
                                 try {
-                                    shuttingDown = true;
-                                    polling = false;
-                                    LOGGER.info("Stopping bot in 3...");
-                                    Thread.sleep(1000);
-                                    LOGGER.info("Stopping bot in 2...");
-                                    Thread.sleep(1000);
-                                    LOGGER.info("Stopping bot in 1...");
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
+                                    foundCommand = true;
+                                    Conversation newCommand = (Conversation) command.clone();
+                                    autowiredCapableBeanFactory.autowireBean(newCommand);
+                                    Response response = newCommand.step(update.message().text(),
+                                            users.get(userId),
+                                            new ArrayList<>(users.values()));
+                                    parseResponse(response, users.get(userId), update.message().chat().id());
+                                    if (!newCommand.finished()) {
+                                        userInteractions.put(userChat, newCommand);
+                                    }
+                                } catch (CloneNotSupportedException e) {
                                     e.printStackTrace();
                                 }
-                                listening = false;
                             }
-                        };
-                        Thread thread = new Thread(runnable);
-                        thread.start();
+                        }
+                    }
+
+                    if (!foundCommand) {
+                        sendMessage(update.message().chat().id(), "Не понял комманду. " +
+                                "Чтобы узнать список комманд, напишите /помощь.");
                     }
                 }
                 return UpdatesListener.CONFIRMED_UPDATES_ALL;
             }
         });
+    }
+
+    /**
+     * Обрабатывает Response, полученный из Conversation
+     *
+     * @param response полученный из Conversation
+     * @param user который отправил сообщение, которое вызвало response
+     * @param chatId id чата, в котором идет переписка
+     */
+    private void parseResponse(Response response, User user, long chatId) {
+        LOGGER.info("Parsing response: " + response.toString());
+        parseAction(response.getAction(), response.getActionObject(), user, chatId, response.getResponseText());
+
+        if (response.getResponseType().equals(ResponseType.TEXT)) {
+            sendMessage(chatId, response.getResponseText());
+        } else if (response.getResponseType().equals(ResponseType.KEYBOARD)) {
+            sendMessage(chatId, response.getResponseText(), response.getResponseKeyboard());
+        }
+    }
+
+    /**
+     * Обрабатывает действие, содержащееся в Response
+     *
+     * @param actionType тип Action, связанного с Response
+     * @param actionObject дополнительный объект для выполнения Action
+     * @param user пользователь, отправивший изначальный запрос
+     * @param chatId id чата, где написал user
+     */
+    private void parseAction(ActionType actionType, Object actionObject, User user, long chatId, String text) {
+        if (actionType.equals(ActionType.UPDATE_USER)) {
+            User updatedUser = (User) actionObject;
+            LOGGER.info("Was size: " + users.get(updatedUser.getId()).getUserPermissions().size() + " became: " + updatedUser.getUserPermissions().size());
+            userService.update(updatedUser);
+            this.users.put(updatedUser.getId(), updatedUser);
+            LOGGER.info("Updated user:  " + updatedUser);
+        } else if (actionType.equals(ActionType.STOP_BOT)) {
+            stopBot();
+        } else if (actionType.equals(ActionType.EXTRA_ACTION)) {
+            Response[] extraActions = (Response[]) actionObject;
+            for (Response extraResponse : extraActions) {
+                parseResponse(extraResponse, user, chatId);
+            }
+        } else if (actionType.equals(ActionType.MESSAGE_USER)) {
+            sendMessage(((User)actionObject).getId(), text);
+        }
+    }
+
+    /**
+     * Останавливает Бота после 3 секунд
+     */
+    private void stopBot() {
+        LOGGER.info("Stopping bot...");
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    shuttingDown = true;
+                    polling = false;
+                    LOGGER.info("Stopping bot in 3...");
+                    Thread.sleep(1000);
+                    LOGGER.info("Stopping bot in 2...");
+                    Thread.sleep(1000);
+                    LOGGER.info("Stopping bot in 1...");
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                listening = false;
+                botStopPolling();
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 
     /**

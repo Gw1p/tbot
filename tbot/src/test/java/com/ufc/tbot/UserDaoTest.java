@@ -32,14 +32,13 @@ public class UserDaoTest {
                 "Anton", 
                 "Bendrikov", 
                 "anton", 
-                new Date(1, Calendar.JANUARY, 2017),
-                true);
-        User user2 = new User(345,
+                new Date(1, Calendar.JANUARY, 2017));
+        User user2 = new User(
+                345,
                 "Temirlan",
                 "Tolibaev",
                 "temir",
-                new Date(3, Calendar.APRIL, 2018),
-                false);
+                new Date(3, Calendar.APRIL, 2018));
         this.userDAO.save(user1);
         this.userDAO.save(user2);
         assertNotNull(user1.getFirstName());
@@ -71,7 +70,6 @@ public class UserDaoTest {
         assertEquals("Tolibaev", userA.getLastName());
         assertEquals("temir", userA.getUsername());
         assertEquals(new Date(3, Calendar.APRIL, 2018), userA.getFirstMessage());
-        assertFalse(userA.isApproved());
 
         User userB = this.userDAO.findById(123);
         assertNotNull(userB);
@@ -80,7 +78,6 @@ public class UserDaoTest {
         assertEquals("Bendrikov", userB.getLastName());
         assertEquals("anton", userB.getUsername());
         assertEquals(new Date(1, Calendar.JANUARY, 2017), userB.getFirstMessage());
-        assertTrue(userB.isApproved());
 
         Iterable users = userDAO.findAll();
         int count = 0;

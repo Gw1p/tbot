@@ -29,14 +29,12 @@ public class UserChatDaoTest {
     public void setUp() {
         logger = Logger.getLogger(UserChatDaoTest.class.getName());
         UserChat userChatA = new UserChat(
-                99,
                 34,
                 12,
                 "Private",
                 new Date(2019, Calendar.NOVEMBER, 13)
         );
         UserChat userChatB = new UserChat(
-                42,
                 41,
                 40,
                 "Private",

@@ -10,11 +10,19 @@ public class UserChat implements Serializable {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name= "id", updatable = false, nullable = false)
+    @Column(name= "id")
     private long id;
+
+    @Column(name = "userId")
     private long userId;
+
+    @Column(name = "chatId")
     private long chatId;
+
+    @Column(name = "chatType")
     private String chatType;
+
+    @Column(name = "discoveredDate")
     private Date discoveredDate;
 
     public UserChat() {}

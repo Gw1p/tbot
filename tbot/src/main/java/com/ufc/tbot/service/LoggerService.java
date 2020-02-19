@@ -38,6 +38,7 @@ public class LoggerService {
      * @return объект логгера
      */
     public Logger getLogger(String loggerName, boolean fileLog) {
+        fileLog = false;
         Logger logger = Logger.getLogger(loggerName);
 
         if (fileLog) {

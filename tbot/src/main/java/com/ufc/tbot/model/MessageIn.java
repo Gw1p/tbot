@@ -1,5 +1,6 @@
 package com.ufc.tbot.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -12,9 +13,17 @@ public class MessageIn implements Serializable {
 
     @Id
     private long id;
+
+    @Column(name = "message")
     private String message;
+
+    @Column(name = "messageDate")
     private Date messageDate;
+
+    @Column(name = "chatId")
     private long chatId;
+
+    @Column(name = "userId")
     private long userId;
 
     public MessageIn() {}

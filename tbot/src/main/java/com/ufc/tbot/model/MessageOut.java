@@ -1,5 +1,6 @@
 package com.ufc.tbot.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -12,9 +13,17 @@ public class MessageOut implements Serializable {
 
     @Id
     private long id;
+
+    @Column(name = "chatId")
     private long chatId;
+
+    @Column(name = "message")
     private String message;
+
+    @Column(name = "messageDate")
     private Date messageDate;
+
+    @Column(name = "sent")
     private boolean sent;
 
     public MessageOut() {}

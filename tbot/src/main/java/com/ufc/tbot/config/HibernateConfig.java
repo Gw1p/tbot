@@ -32,12 +32,15 @@ public class HibernateConfig {
         return sessionFactory;
     }
 
-    private Properties hibernateProperties() {                  // configure hibernate properties
+    private Properties hibernateProperties() {
         Properties properties = new Properties();
         properties.put("hibernate.dialect", environment.getRequiredProperty("spring.jpa.properties.hibernate.dialect"));
         properties.put("hibernate.show_sql", environment.getRequiredProperty("spring.jpa.show-sql"));
         properties.put("hibernate.format_sql", environment.getRequiredProperty("spring.jpa.properties.hibernate.format_sql"));
         properties.put("hibernate.hbm2ddl.auto", environment.getRequiredProperty("spring.jpa.hibernate.ddl-auto"));
+        properties.put("hibernate.connection.CharSet", "utf8");
+        properties.put("hibernate.connection.characterEncoding", "utf8");
+        properties.put("hibernate.connection.useUnicode", "true");
         return properties;
     }
 

@@ -273,7 +273,6 @@ public class BotService {
                             LOGGER.warning("Cannot save message: " + ex.getMessage());
                         }
 
-
                         UserChat userChat = new UserChat(update.message().from().id(),
                                 update.message().chat().id(),
                                 update.message().chat().type().toString(),
@@ -284,6 +283,7 @@ public class BotService {
                             LOGGER.warning("Cannot save userchat: " + ex.getMessage());
                         }
 
+                        // Новый пользователь
                         if (!users.containsKey(userId)) {
                             User user = new User(update.message().from().id(),
                                     update.message().from().firstName(),
@@ -292,6 +292,38 @@ public class BotService {
                                     new Date());
                             userService.save(user);
                             users.put(userId, user);
+
+                            UserChat existingUserChat;
+                            for (User existingUser : users.values()) {
+                                existingUserChat = new UserChat(existingUser.getId(),
+                                        existingUser.getId(),
+                                        "Private",
+                                        new Date());
+                                if (existingUser.hasPermission(PermissionType.ADMIN)) {
+                                    if (userInteractions.containsKey(existingUserChat)) {
+                                        sendMessage(existingUser.getId(), "Новый пользователь: " + user +
+                                                "\nИспользуй /пользователи чтобы изменить его права.");
+                                    } else {
+                                        EditUserCommand editNewUser = new EditUserCommand();
+                                        autowiredCapableBeanFactory.autowireBean(editNewUser);
+
+                                        List<User> newUserList = new ArrayList<>();
+                                        newUserList.add(user);
+                                        editNewUser.setUserList(newUserList);
+                                        editNewUser.setSelectedUserIndex(0);
+                                        editNewUser.setCurrentStep(0);
+
+                                        sendMessage(existingUser.getId(), "Новый пользователь: " + user);
+                                        Response response = editNewUser.step("1",
+                                                existingUser,
+                                                newUserList);
+                                        parseResponse(response, existingUser, existingUserChat.getChatId());
+                                        if (!editNewUser.finished()) {
+                                            userInteractions.put(userChat, editNewUser);
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         // Проверка Прав
@@ -306,7 +338,6 @@ public class BotService {
                             Conversation conversation = userInteractions.get(userChat);
                             foundCommand = true;
                             Response response = conversation.step(update.message().text(), users.get(userId), new ArrayList<>(users.values()));
-                            LOGGER.info("Step");
                             parseResponse(response, users.get(userId), update.message().chat().id());
                             if (conversation.finished()) {
                                 userInteractions.remove(userChat);

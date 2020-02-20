@@ -34,11 +34,13 @@ public class ListCommandsCommand extends Conversation {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
-            response = new Response(ResponseType.TEXT, "Список команд:\n/помощь - выдает список команд");
+            response = new Response(ResponseType.TEXT, "Список команд:\n/помощь - выдает список команд.");
 
             if (user.hasPermission(PermissionType.ADMIN)) {
-                response.setResponseText(response.getResponseText() + "\n\nКоманды админа:\n/стоп " +
-                        "- останавливает Бота\n/пользователи - посмотреть список пользователей и изменить права");
+                response.setResponseText(response.getResponseText() + "\n\nКоманды админа:" +
+                        "\n/стоп - останавливает Бота\n" +
+                        "/пользователи - посмотреть список пользователей и изменить права\n" +
+                        "/админы - просмотреть список админов и изменить права");
             }
 
             this.currentStep += 1;

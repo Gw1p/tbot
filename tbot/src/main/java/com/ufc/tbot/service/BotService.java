@@ -12,6 +12,7 @@ import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.conversation.commands.EditAdminCommand;
 import com.ufc.tbot.conversation.commands.EditUserCommand;
 import com.ufc.tbot.conversation.commands.ListCommandsCommand;
 import com.ufc.tbot.conversation.commands.StopBotCommand;
@@ -94,6 +95,7 @@ public class BotService {
         availableCommands.add(new ListCommandsCommand());
         availableCommands.add(new StopBotCommand());
         availableCommands.add(new EditUserCommand());
+        availableCommands.add(new EditAdminCommand());
 
         telegramBot = new TelegramBot(botToken);
     }

@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * Определяет серию комманд, с помощью которых пользователи могут изменять права других пользователей
  */
 @Component
-public class EditUserCommand extends Conversation implements Cloneable {
+public class EditAdminCommand extends Conversation implements Cloneable {
 
     private List<User> userList;
 
@@ -39,7 +39,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
 
     @Override
     public boolean canStart(String message, User user) {
-        return message.startsWith("/пользовател") && user.hasPermission(PermissionType.ADMIN);
+        return message.startsWith("/админ") && user.hasPermission(PermissionType.ADMIN);
     }
 
     @Override
@@ -48,11 +48,19 @@ public class EditUserCommand extends Conversation implements Cloneable {
 
         if (this.currentStep == -1) {
 
-            String output = userSummaries(users);
-            output += "\nНапишите индекс пользователя, которого вы хотите изменить (например, 1)";
+            String output = "Админы:\n";
+            List<User> adminUsers = new ArrayList<>();
+            for (User passedUser : users) {
+                if (passedUser.hasPermission(PermissionType.ADMIN)) {
+                    adminUsers.add(passedUser);
+                }
+            }
+
+            output += userSummaries(adminUsers);
+            output += "\nНапишите индекс админа, которого вы хотите изменить (например, 1)";
             response = new Response(ResponseType.TEXT, output);
 
-            this.userList = users;
+            this.userList = adminUsers;
             this.currentStep += 1;
 
         } else if (this.currentStep == 0) {
@@ -66,7 +74,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
                         "Убрать Админку" : "Назначить Админом";
 
                 response = new Response(ResponseType.KEYBOARD,
-                        "Что сделать с пользователем " + (selectedUserIndex + 1) + ". " +
+                        "Что сделать с админом " + (selectedUserIndex + 1) + ". " +
                                 this.userList.get(this.selectedUserIndex).getFirstName() + "?",
                         new ReplyKeyboardMarkup(
                                 new String[]{ userOption },
@@ -89,7 +97,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
                     User updatedUser = (User) this.userList.get(this.selectedUserIndex).clone();
                     userService.removePermission(updatedUser, PermissionType.ADMIN);
                     response = new Response(ResponseType.TEXT,
-                            "Забрал у пользователя " + updatedUser.getFirstName() + " админку",
+                            "Забрал у админа " + updatedUser.getFirstName() + " админку",
                             ActionType.UPDATE_USER, updatedUser);
                 } catch (CloneNotSupportedException ex) {}
             } else if (message.equals("Назначить Админом")) {
@@ -181,7 +189,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        EditUserCommand editUserCommand2 = (EditUserCommand) super.clone();
+        EditAdminCommand editUserCommand2 = (EditAdminCommand) super.clone();
         editUserCommand2.userList = new ArrayList<>(this.userList);
         return editUserCommand2;
     }

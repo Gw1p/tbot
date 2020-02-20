@@ -19,12 +19,12 @@ public class StopBotCommand extends Conversation {
     public void reset() {
         this.currentStep = -1;
         this.maxSteps = 2;
-        this.minimumPermissions = PermissionType.USER;
+        this.minimumPermissions = PermissionType.ADMIN;
     }
 
     @Override
     public boolean canStart(String message, User user) {
-        if (user.hasPermission(PermissionType.USER) &&
+        if (user.hasPermission(this.minimumPermissions) &&
                 (message.toLowerCase().equals("/stop") || message.toLowerCase().equals("/стоп"))) {
             return true;
         }

@@ -3,19 +3,14 @@ package com.ufc.tbot.service;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.model.request.Keyboard;
-import com.pengrad.telegrambot.model.request.ParseMode;
-import com.pengrad.telegrambot.model.request.ReplyKeyboardRemove;
+import com.pengrad.telegrambot.model.request.*;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
-import com.ufc.tbot.conversation.commands.EditAdminCommand;
-import com.ufc.tbot.conversation.commands.EditUserCommand;
-import com.ufc.tbot.conversation.commands.ListCommandsCommand;
-import com.ufc.tbot.conversation.commands.StopBotCommand;
+import com.ufc.tbot.conversation.commands.*;
 import com.ufc.tbot.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,6 +74,11 @@ public class BotService {
 
     private List<Conversation> availableCommands = new ArrayList<>();
 
+    // Отдельный чат для Админов
+    private int adminChatId = -265907783;
+
+    private List<Conversation> editingNewUser = new ArrayList<>();
+
     // Если пользователь с Id начал Conversation, то следующий ответ автоматически пойдет в этот Conversation
     private HashMap<UserChat, Conversation> userInteractions = new HashMap<>();
 
@@ -133,7 +133,7 @@ public class BotService {
                 .disableWebPagePreview(false)
                 .disableNotification(false)
                 .replyMarkup(keyboard);
-
+        LOGGER.info("Sending message (" + chatId + "): " + msg);
         SendResponse sendResponse = telegramBot.execute(request);
         LOGGER.info("Response message: " + sendResponse.message());
         return sendResponse.isOk();
@@ -264,6 +264,40 @@ public class BotService {
                             LOGGER.warning("Cannot save chat: " + ex.getMessage());
                         }
 
+                        // Новый пользователь
+                        if (!users.containsKey(userId)) {
+                            LOGGER.info("New user: " + userId);
+                            User user = new User(update.message().from().id(),
+                                    update.message().from().firstName(),
+                                    update.message().from().lastName(),
+                                    update.message().from().username(),
+                                    new Date());
+                            userService.save(user);
+                            users.put(userId, user);
+
+                            Keyboard keyboard = new ReplyKeyboardMarkup(
+                                    new String[]{ "Дать " + user.getFirstName() + " Права Пользователя" },
+                                    new String[]{ "Дать " + user.getFirstName() + " Права Админа (+ пользователя)" },
+                                    new String[]{ "Ничего" }
+                            ).oneTimeKeyboard(true)
+                                    .resizeKeyboard(true)
+                                    .selective(true);
+                            sendMessage(adminChatId, "Новый пользователь: " + user +
+                                    "\nЧто с ним делать?", keyboard);
+
+                            for (User existingUser : users.values()) {
+                                if (existingUser.hasPermission(PermissionType.ADMIN)) {
+                                    EditNewUserCommand editNewUser = new EditNewUserCommand();
+                                    autowiredCapableBeanFactory.autowireBean(editNewUser);
+
+                                    List<User> newUserList = new ArrayList<>();
+                                    newUserList.add(user);
+                                    editingNewUser.add(editNewUser);
+                                    editNewUser.step("", existingUser, newUserList);
+                                }
+                            }
+                        }
+
                         MessageIn messageIn = new MessageIn(update.message().messageId(),
                                 update.message().text(),
                                 new Date(),
@@ -285,49 +319,6 @@ public class BotService {
                             LOGGER.warning("Cannot save userchat: " + ex.getMessage());
                         }
 
-                        // Новый пользователь
-                        if (!users.containsKey(userId)) {
-                            User user = new User(update.message().from().id(),
-                                    update.message().from().firstName(),
-                                    update.message().from().lastName(),
-                                    update.message().from().username(),
-                                    new Date());
-                            userService.save(user);
-                            users.put(userId, user);
-
-                            UserChat existingUserChat;
-                            for (User existingUser : users.values()) {
-                                existingUserChat = new UserChat(existingUser.getId(),
-                                        existingUser.getId(),
-                                        "Private",
-                                        new Date());
-                                if (existingUser.hasPermission(PermissionType.ADMIN)) {
-                                    if (userInteractions.containsKey(existingUserChat)) {
-                                        sendMessage(existingUser.getId(), "Новый пользователь: " + user +
-                                                "\nИспользуй /пользователи чтобы изменить его права.");
-                                    } else {
-                                        EditUserCommand editNewUser = new EditUserCommand();
-                                        autowiredCapableBeanFactory.autowireBean(editNewUser);
-
-                                        List<User> newUserList = new ArrayList<>();
-                                        newUserList.add(user);
-                                        editNewUser.setUserList(newUserList);
-                                        editNewUser.setSelectedUserIndex(0);
-                                        editNewUser.setCurrentStep(0);
-
-                                        sendMessage(existingUser.getId(), "Новый пользователь: " + user);
-                                        Response response = editNewUser.step("1",
-                                                existingUser,
-                                                newUserList);
-                                        parseResponse(response, existingUser, existingUserChat.getChatId());
-                                        if (!editNewUser.finished()) {
-                                            userInteractions.put(userChat, editNewUser);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         // Проверка Прав
                         if (!users.get(userId).hasPermission(PermissionType.USER)) {
                             LOGGER.warning("Unapproved User (" + update.message().from().id() + ")!");
@@ -335,16 +326,37 @@ public class BotService {
                         }
 
                         boolean foundCommand = false;
+                        // Есть ли новые пользователей, которых админы должны подтвердить?
+                        if (users.get(userId).hasPermission(PermissionType.ADMIN)
+                                && editingNewUser.size() > 0
+                                && update.message().chat().id() == adminChatId) {
+                            foundCommand = true;
+                            Conversation lastEditNewUser = editingNewUser.get(editingNewUser.size() - 1);
+                            Response response = lastEditNewUser.step(
+                                    update.message().text(),
+                                    users.get(userId),
+                                    new ArrayList<>(users.values())
+                            );
+                            parseResponse(response, users.get(userId), update.message().chat().id());
+                            if (lastEditNewUser.finished()) {
+                                editingNewUser.remove(editingNewUser.size() - 1);
+                            }
+                        }
+
                         // Проверяем комманды, которые пользователи уже начали
-                        if (userInteractions.containsKey(userChat)) {
+                        if (userInteractions.containsKey(userChat) && !foundCommand) {
                             Conversation conversation = userInteractions.get(userChat);
                             foundCommand = true;
-                            Response response = conversation.step(update.message().text(), users.get(userId), new ArrayList<>(users.values()));
+                            Response response = conversation.step(
+                                    update.message().text(),
+                                    users.get(userId),
+                                    new ArrayList<>(users.values())
+                            );
                             parseResponse(response, users.get(userId), update.message().chat().id());
                             if (conversation.finished()) {
                                 userInteractions.remove(userChat);
                             }
-                        } else {
+                        } else if (!foundCommand) {
                             // Проверяем существующие команды
                             for (Conversation command : availableCommands) {
                                 LOGGER.info("Cmd " + command.getClass().getName() +
@@ -354,9 +366,11 @@ public class BotService {
                                         foundCommand = true;
                                         Conversation newCommand = (Conversation) command.clone();
                                         autowiredCapableBeanFactory.autowireBean(newCommand);
-                                        Response response = newCommand.step(update.message().text(),
+                                        Response response = newCommand.step(
+                                                update.message().text(),
                                                 users.get(userId),
-                                                new ArrayList<>(users.values()));
+                                                new ArrayList<>(users.values())
+                                        );
                                         parseResponse(response, users.get(userId), update.message().chat().id());
                                         if (!newCommand.finished()) {
                                             userInteractions.put(userChat, newCommand);

@@ -185,16 +185,4 @@ public class EditUserCommand extends Conversation implements Cloneable {
         editUserCommand2.userList = new ArrayList<>(this.userList);
         return editUserCommand2;
     }
-
-    public void setUserList(List<User> userList) {
-        this.userList = userList;
-    }
-
-    public void setSelectedUserIndex(int selectedUserIndex) {
-        this.selectedUserIndex = selectedUserIndex;
-    }
-
-    public void setCurrentStep(int currentStep) {
-        this.currentStep = currentStep;
-    }
 }

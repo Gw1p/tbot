@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Определяет серию комманд, с помощью которых пользователи могут изменять права других пользователей
@@ -29,7 +27,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
     @Override
     public void reset() {
         this.currentStep = -1;
-        this.maxSteps = 3;
+        this.maxSteps = 2;
         this.minimumPermissions = PermissionType.ADMIN;
     }
 
@@ -88,7 +86,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
             } else if (message.equals("Ничего")) {
                 response = new Response(ResponseType.TEXT, "У пользователя " +
                         newUser.getFirstName() + " нет прав для Бота.");
-                this.currentStep = this.maxSteps - 2;
+                this.currentStep = this.maxSteps - 1;
             } else {
                 response = new Response(
                         ResponseType.KEYBOARD,
@@ -107,19 +105,6 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
             this.currentStep += 1;
         }
         return response;
-    }
-
-    /**
-     * Возвращает первую цифру из String
-     *
-     * @param message из которого надо получить цифру
-     * @return int челое число, находящееся в message
-     */
-    private int getIndex(String message) {
-        Pattern p = Pattern.compile("\\d+");
-        Matcher m = p.matcher(message);
-        m.matches();
-        return Integer.parseInt(m.group());
     }
 
     @Override

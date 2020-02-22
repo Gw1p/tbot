@@ -133,7 +133,7 @@ public class BotService {
                 .disableWebPagePreview(false)
                 .disableNotification(false)
                 .replyMarkup(keyboard);
-        LOGGER.info("Sending message (" + chatId + "): " + msg);
+        LOGGER.info("Sending message with keyboard (" + chatId + "): " + msg);
         SendResponse sendResponse = telegramBot.execute(request);
         LOGGER.info("Response message: " + sendResponse.message());
         return sendResponse.isOk();
@@ -279,23 +279,20 @@ public class BotService {
                                     new String[]{ "Дать " + user.getFirstName() + " Права Пользователя" },
                                     new String[]{ "Дать " + user.getFirstName() + " Права Админа (+ пользователя)" },
                                     new String[]{ "Ничего" }
-                            ).oneTimeKeyboard(true)
+                            ).oneTimeKeyboard(false)
                                     .resizeKeyboard(true)
-                                    .selective(true);
+                                    .selective(false);
                             sendMessage(adminChatId, "Новый пользователь: " + user +
                                     "\nЧто с ним делать?", keyboard);
 
-                            for (User existingUser : users.values()) {
-                                if (existingUser.hasPermission(PermissionType.ADMIN)) {
-                                    EditNewUserCommand editNewUser = new EditNewUserCommand();
-                                    autowiredCapableBeanFactory.autowireBean(editNewUser);
+                            EditNewUserCommand editNewUser = new EditNewUserCommand();
+                            editNewUser.reset();
+                            autowiredCapableBeanFactory.autowireBean(editNewUser);
 
-                                    List<User> newUserList = new ArrayList<>();
-                                    newUserList.add(user);
-                                    editingNewUser.add(editNewUser);
-                                    editNewUser.step("", existingUser, newUserList);
-                                }
-                            }
+                            List<User> newUserList = new ArrayList<>();
+                            newUserList.add(user);
+                            editingNewUser.add(editNewUser);
+                            editNewUser.step("", null, newUserList);
                         }
 
                         MessageIn messageIn = new MessageIn(update.message().messageId(),
@@ -335,9 +332,9 @@ public class BotService {
                             Response response = lastEditNewUser.step(
                                     update.message().text(),
                                     users.get(userId),
-                                    new ArrayList<>(users.values())
+                                    new ArrayList<>()
                             );
-                            parseResponse(response, users.get(userId), update.message().chat().id());
+                            parseResponse(response, users.get(userId), adminChatId);
                             if (lastEditNewUser.finished()) {
                                 editingNewUser.remove(editingNewUser.size() - 1);
                             }

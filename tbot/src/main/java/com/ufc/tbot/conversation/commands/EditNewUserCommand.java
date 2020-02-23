@@ -37,7 +37,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, User user, List<User> users) {
+    public Response step(String message, int messageId, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {

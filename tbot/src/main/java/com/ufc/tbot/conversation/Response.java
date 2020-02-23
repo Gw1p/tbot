@@ -16,6 +16,9 @@ public class Response {
     // (Зависит от ResponseType) клавиатура, которую стоит представить пользователю
     private Keyboard responseKeyboard;
 
+    // Id сообщения, на которое ответить
+    private int messageId;
+
     // Дополнительное действие, сопутствующее этому ответу
     private ActionType action;
 
@@ -25,6 +28,13 @@ public class Response {
     public Response(ResponseType responseType, String responseText) {
         this.responseType = responseType;
         this.responseText = responseText;
+        this.action = ActionType.NONE;
+    }
+
+    public Response(ResponseType responseType, String responseText, int messageId) {
+        this.responseType = responseType;
+        this.responseText = responseText;
+        this.messageId = messageId;
         this.action = ActionType.NONE;
     }
 
@@ -41,6 +51,18 @@ public class Response {
         this.actionObject = actionObject;
     }
 
+    public Response(ResponseType responseType,
+                    String responseText,
+                    int messageId,
+                    ActionType action,
+                    Object actionObject) {
+        this.responseType = responseType;
+        this.responseText = responseText;
+        this.messageId = messageId;
+        this.action = action;
+        this.actionObject = actionObject;
+    }
+
     public Response(ResponseType responseType, String responseText, Keyboard responseKeyboard) {
         this.responseType = responseType;
         this.responseKeyboard = responseKeyboard;
@@ -48,17 +70,46 @@ public class Response {
         this.action = ActionType.NONE;
     }
 
-    public Response(ResponseType responseType, String responseText, Keyboard responseKeyboard, ActionType action) {
+    public Response(ResponseType responseType, String responseText, Keyboard responseKeyboard, int messageId) {
+        this.responseType = responseType;
+        this.responseKeyboard = responseKeyboard;
+        this.responseText = responseText;
+        this.messageId = messageId;
+        this.action = ActionType.NONE;
+    }
+
+    public Response(ResponseType responseType,
+                    String responseText,
+                    Keyboard responseKeyboard,
+                    ActionType action) {
         this.responseType = responseType;
         this.responseKeyboard = responseKeyboard;
         this.responseText = responseText;
         this.action = action;
     }
 
-    public Response(ResponseType responseType, String responseText, Keyboard responseKeyboard, ActionType action, Object actionObject) {
+    public Response(ResponseType responseType,
+                    String responseText,
+                    Keyboard responseKeyboard,
+                    ActionType action,
+                    Object actionObject) {
         this.responseType = responseType;
         this.responseKeyboard = responseKeyboard;
         this.responseText = responseText;
+        this.action = action;
+        this.actionObject = actionObject;
+    }
+
+    public Response(ResponseType responseType,
+                    String responseText,
+                    Keyboard responseKeyboard,
+                    int messageId,
+                    ActionType action,
+                    Object actionObject) {
+        this.responseType = responseType;
+        this.responseKeyboard = responseKeyboard;
+        this.responseText = responseText;
+        this.messageId = messageId;
         this.action = action;
         this.actionObject = actionObject;
     }
@@ -95,6 +146,8 @@ public class Response {
     public String getResponseText() { return responseText; }
 
     public Keyboard getResponseKeyboard() { return responseKeyboard; }
+
+    public int getMessageId() { return messageId; }
 
     public ActionType getAction() { return action; }
 

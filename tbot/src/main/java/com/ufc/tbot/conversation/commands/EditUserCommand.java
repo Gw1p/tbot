@@ -49,7 +49,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, User user, List<User> users) {
+    public Response step(String message, int messageId, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -64,11 +64,11 @@ public class EditUserCommand extends Conversation implements Cloneable {
 
         } else if (this.currentStep == 0) {
 
-            response = getUserOptions(message);
+            response = getUserOptions(message, messageId);
 
         } else if (this.currentStep == 1) {
 
-            response = changeUsersPermissions(message);
+            response = changeUsersPermissions(message, messageId);
 
         }
         return response;
@@ -78,9 +78,10 @@ public class EditUserCommand extends Conversation implements Cloneable {
      * Создает Response объект с возможными опциями для админа
      *
      * @param message которое отправил админ с индексами пользователей
+     * @param messageId id сообщения, на которое надо ответить
      * @return Response объект с опциями
      */
-    private Response getUserOptions(String message) {
+    private Response getUserOptions(String message, int messageId) {
         Response response = new Response(ResponseType.NONE, "");
 
         try {
@@ -93,7 +94,8 @@ public class EditUserCommand extends Conversation implements Cloneable {
                 String adminOption = userList.get(selectedUserIndexes.get(0) - 1).hasPermission(PermissionType.ADMIN) ?
                         "Убрать Админку" : "Назначить Админом";
 
-                response = new Response(ResponseType.KEYBOARD,
+                response = new Response(
+                        ResponseType.KEYBOARD_REPLY,
                         "Что сделать с пользователем " + (selectedUserIndexes.get(0)) + ". " +
                                 this.userList.get(selectedUserIndexes.get(0) - 1).getFirstName() + "?",
                         new ReplyKeyboardMarkup(
@@ -102,7 +104,8 @@ public class EditUserCommand extends Conversation implements Cloneable {
                                 new String[]{ "Отменить" })
                                 .oneTimeKeyboard(true)
                                 .resizeKeyboard(true)
-                                .selective(true)
+                                .selective(true),
+                        messageId
                 );
 
             } else if (selectedUserIndexes.size() > 1) {
@@ -119,7 +122,8 @@ public class EditUserCommand extends Conversation implements Cloneable {
                 }
                 output.append("\nЧто с ними делать?");
 
-                response = new Response(ResponseType.KEYBOARD,
+                response = new Response(
+                        ResponseType.KEYBOARD_REPLY,
                         output.toString(),
                         new ReplyKeyboardMarkup(
                                 new String[]{ "- Права Пользователей", "+ Права Пользователей" },
@@ -127,7 +131,8 @@ public class EditUserCommand extends Conversation implements Cloneable {
                                 new String[]{ "Отменить" })
                                 .oneTimeKeyboard(true)
                                 .resizeKeyboard(true)
-                                .selective(true)
+                                .selective(true),
+                        messageId
                 );
 
             }
@@ -135,8 +140,11 @@ public class EditUserCommand extends Conversation implements Cloneable {
             this.currentStep += 1;
         } catch (Exception ex) {
             System.out.println("Exception when retrieving indexes from message: " + ex.getMessage());
-            response = new Response(ResponseType.TEXT, "Неверный формат." +
-                    "\nНапишите индекс пользователя, которого вы хотите изменить (например, 1)");
+            response = new Response(
+                    ResponseType.TEXT,
+                    "Неверный формат.\nНапишите индекс пользователя, " +
+                            "которого вы хотите изменить (например, 1)",
+                    messageId);
         }
 
         return response;
@@ -146,14 +154,15 @@ public class EditUserCommand extends Conversation implements Cloneable {
      * Изменяет права пользователя/пользователей в зависимости от выбора пользователя
      *
      * @param message ответ пользователя
+     * @param messageId id сообщения, на которое надо ответить
      * @return Response объект с изменениями
      */
-    private Response changeUsersPermissions(String message) {
+    private Response changeUsersPermissions(String message, int messageId) {
         Response response = new Response(ResponseType.NONE, "");
 
         if (message.equals("Отменить")) {
 
-            response = new Response(ResponseType.TEXT, "Отменяю операцию.");
+            response = new Response(ResponseType.TEXT_REPLY, "Отменяю операцию.", messageId);
             this.currentStep = this.maxSteps - 1;
 
         } else {
@@ -165,9 +174,12 @@ public class EditUserCommand extends Conversation implements Cloneable {
                     try {
                         User updatedUser = (User) this.userList.get(selectedUserIndexes.get(0) - 1).clone();
                         userService.removePermission(updatedUser, PermissionType.ADMIN);
-                        response = new Response(ResponseType.TEXT,
+                        response = new Response(
+                                ResponseType.TEXT_REPLY,
                                 "Забрал у пользователя " + updatedUser.getFirstName() + " админку",
-                                ActionType.UPDATE_USER, updatedUser);
+                                messageId,
+                                ActionType.UPDATE_USER,
+                                updatedUser);
                     } catch (CloneNotSupportedException ex) {}
 
                 } else if (message.equals("Назначить Админом")) {
@@ -186,8 +198,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                                 ),
                         };
 
-                        response = new Response(ResponseType.TEXT,
+                        response = new Response(ResponseType.TEXT_REPLY,
                                 "Дал пользователю " + updatedUser.getFirstName() + " админку",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
                                 extraResponses);
                     } catch (CloneNotSupportedException ex) {}
@@ -197,8 +210,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                     try {
                         User updatedUser = (User) this.userList.get(selectedUserIndexes.get(0) - 1).clone();
                         userService.removePermission(updatedUser, PermissionType.USER);
-                        response = new Response(ResponseType.TEXT,
+                        response = new Response(ResponseType.TEXT_REPLY,
                                 "Забрал у пользователя " + updatedUser.getFirstName() + " статус пользователя",
+                                messageId,
                                 ActionType.UPDATE_USER,
                                 updatedUser);
                     } catch (CloneNotSupportedException ex) {}
@@ -218,8 +232,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                                 ),
                         };
 
-                        response = new Response(ResponseType.TEXT,
+                        response = new Response(ResponseType.TEXT_REPLY,
                                 "Дал пользователю " + updatedUser.getFirstName() + " статус пользователя",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
                                 extraResponses);
                     } catch (CloneNotSupportedException ex) {}
@@ -245,8 +260,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                         }
 
                         response = new Response(
-                                ResponseType.TEXT,
+                                ResponseType.TEXT_REPLY,
                                 "Забрал у пользователей статус пользователя",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
                                 extraResponses
                         );
@@ -279,8 +295,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                         }
 
                         response = new Response(
-                                ResponseType.TEXT,
+                                ResponseType.TEXT_REPLY,
                                 "Дал пользователям права пользователя",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
                                 extraResponses
                         );
@@ -304,10 +321,11 @@ public class EditUserCommand extends Conversation implements Cloneable {
                         }
 
                         response = new Response(
-                                ResponseType.TEXT,
+                                ResponseType.TEXT_REPLY,
                                 "Забрал у пользователей статус админа",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
-                                (Response[]) extraResponses.toArray()
+                                extraResponses
                         );
 
                     } catch (CloneNotSupportedException ex) {}
@@ -337,8 +355,9 @@ public class EditUserCommand extends Conversation implements Cloneable {
                         }
 
                         response = new Response(
-                                ResponseType.TEXT,
+                                ResponseType.TEXT_REPLY,
                                 "Дал пользователям права админа",
+                                messageId,
                                 ActionType.EXTRA_ACTION,
                                 extraResponses
                         );

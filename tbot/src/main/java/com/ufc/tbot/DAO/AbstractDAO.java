@@ -68,7 +68,7 @@ public abstract class AbstractDAO<T extends Serializable> {
         try {
             return (T) getCurrentSession().get(clazz, id);
         } catch (Exception ex) {
-            logger.warning("Could not find by id: " + id);
+            logger.warning("Could not find by id: " + id + "\nError: " + ex.getMessage());
             return null;
         }
     }
@@ -82,7 +82,7 @@ public abstract class AbstractDAO<T extends Serializable> {
         try {
             return getCurrentSession().createQuery("from " + clazz.getName()).list();
         } catch (Exception ex) {
-            logger.warning("Could not findAll: " + clazz.getName());
+            logger.warning("Could not findAll: " + clazz.getName() + "\nError: " + ex.getMessage());
             return new ArrayList<>();
         }
     }
@@ -97,7 +97,7 @@ public abstract class AbstractDAO<T extends Serializable> {
             getCurrentSession().persist(entity);
             logger.info("Saved " + clazz.getName() + ": " + entity);
         } catch (Exception ex) {
-            logger.warning("Could not save " + clazz.getName() + ": " + entity);
+            logger.warning("Could not save " + clazz.getName() + ": " + entity + "\nError: " + ex.getMessage());
         }
     }
 
@@ -111,7 +111,7 @@ public abstract class AbstractDAO<T extends Serializable> {
         try {
             return (T) getCurrentSession().merge(entity);
         } catch (Exception ex) {
-            logger.warning("Could not update " + clazz.getName() + ": " + entity);
+            logger.warning("Could not update " + clazz.getName() + ": " + entity + "\nError: " + ex.getMessage());
             return null;
         }
     }
@@ -126,7 +126,7 @@ public abstract class AbstractDAO<T extends Serializable> {
             getCurrentSession().delete(entity);
             logger.info("Deleted " + clazz.getName() + ": " + entity);
         } catch (Exception ex) {
-            logger.warning("Could not delete " + clazz.getName() + ": " + entity);
+            logger.warning("Could not delete " + clazz.getName() + ": " + entity + "\nError: " + ex.getMessage());
         }
     }
 
@@ -141,7 +141,7 @@ public abstract class AbstractDAO<T extends Serializable> {
             delete(entity);
             logger.info("Deleted " + clazz.getName() + " with id " + id);
         } catch (Exception ex) {
-            logger.warning("Could not delete " + clazz.getName());
+            logger.warning("Could not delete " + clazz.getName() + "\nError: " + ex.getMessage());
         }
     }
 

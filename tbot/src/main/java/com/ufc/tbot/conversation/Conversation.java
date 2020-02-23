@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation;
 
+import com.pengrad.telegrambot.model.Message;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 
@@ -43,11 +44,11 @@ public abstract class Conversation implements Cloneable {
      * Решает, какой Response отправить пользователю, в зависимости от текущего шага
      *
      * @param message которое отправил пользователь
-     * @param user который отправил message
+     * @param user от кого сообщение
      * @param users все пользователи
      * @return Response объект, который даст BotService понять, что делать дальше
      */
-    public abstract Response step(String message, int messageId, User user, List<User> users);
+    public abstract Response step(Message message, User user, List<User> users);
 
     public Object clone() throws CloneNotSupportedException {
         return super.clone();

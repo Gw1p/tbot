@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation.commands;
 
+import com.pengrad.telegrambot.model.Message;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
@@ -25,7 +26,7 @@ public class StatusCommand extends Conversation {
     }
 
     @Override
-    public Response step(String message, int messageId, User user, List<User> users) {
+    public Response step(Message message, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {

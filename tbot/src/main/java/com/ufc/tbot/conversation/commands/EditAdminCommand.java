@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation.commands;
 
+import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
 import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
@@ -43,7 +44,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, int messageId, User user, List<User> users) {
+    public Response step(Message message, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -66,7 +67,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
         } else if (this.currentStep == 0) {
 
             try {
-                this.selectedUserIndex = getIndex(message) - 1;
+                this.selectedUserIndex = getIndex(message.text()) - 1;
 
                 String userOption = userList.get(selectedUserIndex).hasPermission(PermissionType.USER) ?
                         "Убрать Права Пользователя" : "Дать Права Пользователя";
@@ -92,7 +93,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
 
         } else if (this.currentStep == 1) {
             user = userList.get(selectedUserIndex);
-            if (message.equals("Убрать Админку")) {
+            if (message.text().equals("Убрать Админку")) {
                 try {
                     User updatedUser = (User) this.userList.get(this.selectedUserIndex).clone();
                     userService.removePermission(updatedUser, PermissionType.ADMIN);
@@ -100,7 +101,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
                             "Забрал у админа " + updatedUser.getFirstName() + " админку",
                             ActionType.UPDATE_USER, updatedUser);
                 } catch (CloneNotSupportedException ex) {}
-            } else if (message.equals("Назначить Админом")) {
+            } else if (message.text().equals("Назначить Админом")) {
                 try {
                     User updatedUser = (User) this.userList.get(this.selectedUserIndex).clone();
                     userService.addPermission(updatedUser, PermissionType.ADMIN);
@@ -119,7 +120,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
                             ActionType.EXTRA_ACTION,
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
-            } else if (message.equals("Убрать Права Пользователя")) {
+            } else if (message.text().equals("Убрать Права Пользователя")) {
                 try {
                     User updatedUser = (User) this.userList.get(this.selectedUserIndex).clone();
                     userService.removePermission(updatedUser, PermissionType.USER);
@@ -128,7 +129,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
                             ActionType.UPDATE_USER,
                             updatedUser);
                 } catch (CloneNotSupportedException ex) {}
-            } else if (message.equals("Дать Права Пользователя")) {
+            } else if (message.text().equals("Дать Права Пользователя")) {
                 try {
                     User updatedUser = (User) this.userList.get(this.selectedUserIndex).clone();
                     userService.addPermission(updatedUser, PermissionType.USER);
@@ -146,7 +147,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
                             ActionType.EXTRA_ACTION,
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
-            } else if (message.equals("Отменить")) {
+            } else if (message.text().equals("Отменить")) {
                 response = new Response(ResponseType.TEXT, "Отменяю операцию.");
                 this.currentStep = this.maxSteps - 2;
             }
@@ -168,10 +169,21 @@ public class EditAdminCommand extends Conversation implements Cloneable {
             User user = users.get(i);
             // 1. Вася Пупкин (13245) (пользователь: true | админ: false)
             responseBuilder.append((i+1) + ". " + user.getFirstName() + " " + user.getLastName() +
-                    " (" + user.getId() + ") " + "(пользователь: " + user.hasPermission(PermissionType.USER) +
-                    " | админ: " + user.hasPermission(PermissionType.ADMIN) + ")\n");
+                    " (" + user.getId() + ") " + "(пользователь: " +
+                    convertBoolToEmoji(user.hasPermission(PermissionType.USER)) +
+                    " | админ: " + convertBoolToEmoji(user.hasPermission(PermissionType.ADMIN)) + ")\n");
         }
         return responseBuilder.toString();
+    }
+
+    /**
+     * Трансформирует boolean в emoji
+     *
+     * @param boolToConvert boolean, который надо превратить в emoji
+     * @return unicode emoji
+     */
+    private String convertBoolToEmoji(boolean boolToConvert) {
+        return boolToConvert ? "\u2705" : "\u274C";
     }
 
     /**

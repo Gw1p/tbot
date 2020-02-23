@@ -3,7 +3,8 @@ CREATE TABLE Users(
     firstName NVARCHAR(255),
     lastName NVARCHAR(255),
     username NVARCHAR(255),
-	firstMessage DATETIME NOT NULL
+	firstMessage DATETIME NOT NULL,
+	phone bigint
 );
 GO
 

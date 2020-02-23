@@ -93,6 +93,7 @@ public class BotService {
         availableCommands.add(new StopBotCommand());
         availableCommands.add(new EditUserCommand());
         availableCommands.add(new EditAdminCommand());
+        availableCommands.add(new StatusCommand());
 
         telegramBot = new TelegramBot(botToken);
     }

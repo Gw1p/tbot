@@ -18,10 +18,7 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -124,6 +121,27 @@ public class BotService {
      *
      * @param chatId id чата, в который отправить сообщение
      * @param msg сообщение, которое надо отправить
+     * @param messageId id сообщения, на которое надо ответить
+     * @return true/false отправилось ли сообщение успешно?
+     */
+    private boolean sendMessage(long chatId, String msg, int messageId) {
+        SendMessage request = new SendMessage(chatId, msg)
+                .parseMode(ParseMode.HTML)
+                .disableWebPagePreview(true)
+                .disableNotification(false)
+                .replyToMessageId(messageId)
+                .replyMarkup(new ReplyKeyboardRemove());
+
+        SendResponse sendResponse = telegramBot.execute(request);
+        LOGGER.info("Sending message (" + chatId + "): " + sendResponse.message());
+        return sendResponse.isOk();
+    }
+
+    /**
+     * Отправляет сообщение msg в чат chatId
+     *
+     * @param chatId id чата, в который отправить сообщение
+     * @param msg сообщение, которое надо отправить
      * @param keyboard кастомная клавиатура, с которой ответить пользователю
      * @return true/false отправилось ли сообщение успешно?
      */
@@ -132,6 +150,28 @@ public class BotService {
                 .parseMode(ParseMode.HTML)
                 .disableWebPagePreview(false)
                 .disableNotification(false)
+                .replyMarkup(keyboard);
+        LOGGER.info("Sending message with keyboard (" + chatId + "): " + msg);
+        SendResponse sendResponse = telegramBot.execute(request);
+        LOGGER.info("Response message: " + sendResponse.message());
+        return sendResponse.isOk();
+    }
+
+    /**
+     * Отправляет сообщение msg в чат chatId
+     *
+     * @param chatId id чата, в который отправить сообщение
+     * @param msg сообщение, которое надо отправить
+     * @param keyboard кастомная клавиатура, с которой ответить пользователю
+     * @param replyToMessageId id сообщения, на которое ответит Бот
+     * @return true/false отправилось ли сообщение успешно?
+     */
+    private boolean sendMessage(long chatId, String msg , Keyboard keyboard, int replyToMessageId) {
+        SendMessage request = new SendMessage(chatId, msg)
+                .parseMode(ParseMode.HTML)
+                .disableWebPagePreview(false)
+                .disableNotification(false)
+                .replyToMessageId(replyToMessageId)
                 .replyMarkup(keyboard);
         LOGGER.info("Sending message with keyboard (" + chatId + "): " + msg);
         SendResponse sendResponse = telegramBot.execute(request);
@@ -292,7 +332,7 @@ public class BotService {
                             List<User> newUserList = new ArrayList<>();
                             newUserList.add(user);
                             editingNewUser.add(editNewUser);
-                            editNewUser.step("", null, newUserList);
+                            editNewUser.step("", -1,null, newUserList);
                         }
 
                         MessageIn messageIn = new MessageIn(update.message().messageId(),
@@ -311,7 +351,7 @@ public class BotService {
                                 update.message().chat().type().toString(),
                                 new Date());
                         try {
-                            userChatService.saveOrUpdate(userChat);
+                            userChatService.saveIfNotExists(userChat);
                         } catch (Exception ex) {
                             LOGGER.warning("Cannot save userchat: " + ex.getMessage());
                         }
@@ -331,6 +371,7 @@ public class BotService {
                             Conversation lastEditNewUser = editingNewUser.get(editingNewUser.size() - 1);
                             Response response = lastEditNewUser.step(
                                     update.message().text(),
+                                    update.message().messageId(),
                                     users.get(userId),
                                     new ArrayList<>()
                             );
@@ -346,6 +387,7 @@ public class BotService {
                             foundCommand = true;
                             Response response = conversation.step(
                                     update.message().text(),
+                                    update.message().messageId(),
                                     users.get(userId),
                                     new ArrayList<>(users.values())
                             );
@@ -363,8 +405,10 @@ public class BotService {
                                         foundCommand = true;
                                         Conversation newCommand = (Conversation) command.clone();
                                         autowiredCapableBeanFactory.autowireBean(newCommand);
+
                                         Response response = newCommand.step(
                                                 update.message().text(),
+                                                update.message().messageId(),
                                                 users.get(userId),
                                                 new ArrayList<>(users.values())
                                         );
@@ -407,6 +451,15 @@ public class BotService {
             sendMessage(chatId, response.getResponseText());
         } else if (response.getResponseType().equals(ResponseType.KEYBOARD)) {
             sendMessage(chatId, response.getResponseText(), response.getResponseKeyboard());
+        } else if (response.getResponseType().equals(ResponseType.TEXT_REPLY)) {
+            sendMessage(chatId, response.getResponseText(), response.getMessageId());
+        } else if (response.getResponseType().equals(ResponseType.KEYBOARD_REPLY)) {
+            sendMessage(
+                    chatId,
+                    response.getResponseText(),
+                    response.getResponseKeyboard(),
+                    response.getMessageId()
+            );
         }
     }
 
@@ -428,7 +481,7 @@ public class BotService {
         } else if (actionType.equals(ActionType.STOP_BOT)) {
             stopBot();
         } else if (actionType.equals(ActionType.EXTRA_ACTION)) {
-            Response[] extraActions = (Response[]) actionObject;
+            Collection<Response> extraActions = (Collection<Response>) actionObject;
             for (Response extraResponse : extraActions) {
                 parseResponse(extraResponse, user, chatId);
             }

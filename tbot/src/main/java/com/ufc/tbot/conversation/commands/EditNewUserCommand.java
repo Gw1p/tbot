@@ -37,7 +37,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, User user, List<User> users) {
+    public Response step(String message, int messageId, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -46,6 +46,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
         } else if (this.currentStep == 0) {
 
             if (message.equals("Дать " + newUser.getFirstName() + " Права Админа (+ пользователя)")) {
+
                 try {
                     User updatedUser = (User) newUser.clone();
                     userService.addPermission(updatedUser, PermissionType.USER);
@@ -65,7 +66,9 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                             ActionType.EXTRA_ACTION,
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
+
             } else if (message.equals("Дать " + newUser.getFirstName() + " Права Пользователя")) {
+
                 try {
                     User updatedUser = (User) newUser.clone();
                     userService.addPermission(updatedUser, PermissionType.USER);
@@ -83,11 +86,15 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                             ActionType.EXTRA_ACTION,
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
+
             } else if (message.equals("Ничего")) {
+
                 response = new Response(ResponseType.TEXT, "У пользователя " +
                         newUser.getFirstName() + " нет прав для Бота.");
                 this.currentStep = this.maxSteps - 1;
+
             } else {
+
                 response = new Response(
                         ResponseType.KEYBOARD,
                         "Не понял. Попробуйте еще раз.",
@@ -100,6 +107,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                         .selective(true)
                 );
                 this.currentStep -= 1;
+
             }
 
             this.currentStep += 1;

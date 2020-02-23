@@ -38,7 +38,7 @@ public class UserChatService {
      * Сохраняет UserChat в БД.
      * Если он уже существует, обновляет
      *
-     * @param userChat
+     * @param userChat который надо сохранить/обновить в БД
      */
     public void saveOrUpdate(UserChat userChat) {
         UserChat existingUserChat = userChatDAO.findUserChat(userChat.getUserId(), userChat.getChatId());
@@ -46,6 +46,18 @@ public class UserChatService {
             userChatDAO.save(userChat);
         } else {
             userChatDAO.update(userChat);
+        }
+    }
+
+    /**
+     * Сохраняет UserChat в БД, если он не существует.
+     *
+     * @param userChat который надо сохранить в БД
+     */
+    public void saveIfNotExists(UserChat userChat) {
+        UserChat existingUserChat = userChatDAO.findUserChat(userChat.getUserId(), userChat.getChatId());
+        if (existingUserChat == null) {
+            userChatDAO.save(userChat);
         }
     }
 

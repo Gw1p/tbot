@@ -47,7 +47,7 @@ public abstract class Conversation implements Cloneable {
      * @param users все пользователи
      * @return Response объект, который даст BotService понять, что делать дальше
      */
-    public abstract Response step(String message, User user, List<User> users);
+    public abstract Response step(String message, int messageId, User user, List<User> users);
 
     public Object clone() throws CloneNotSupportedException {
         return super.clone();

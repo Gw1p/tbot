@@ -18,10 +18,7 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -311,7 +308,7 @@ public class BotService {
                                 update.message().chat().type().toString(),
                                 new Date());
                         try {
-                            userChatService.saveOrUpdate(userChat);
+                            userChatService.saveIfNotExists(userChat);
                         } catch (Exception ex) {
                             LOGGER.warning("Cannot save userchat: " + ex.getMessage());
                         }
@@ -363,6 +360,7 @@ public class BotService {
                                         foundCommand = true;
                                         Conversation newCommand = (Conversation) command.clone();
                                         autowiredCapableBeanFactory.autowireBean(newCommand);
+
                                         Response response = newCommand.step(
                                                 update.message().text(),
                                                 users.get(userId),
@@ -428,7 +426,7 @@ public class BotService {
         } else if (actionType.equals(ActionType.STOP_BOT)) {
             stopBot();
         } else if (actionType.equals(ActionType.EXTRA_ACTION)) {
-            Response[] extraActions = (Response[]) actionObject;
+            Collection<Response> extraActions = (Collection<Response>) actionObject;
             for (Response extraResponse : extraActions) {
                 parseResponse(extraResponse, user, chatId);
             }

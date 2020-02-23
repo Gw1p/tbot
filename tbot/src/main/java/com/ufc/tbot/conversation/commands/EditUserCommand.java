@@ -383,11 +383,48 @@ public class EditUserCommand extends Conversation implements Cloneable {
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
             // 1. Вася Пупкин (13245) (пользователь: true | админ: false)
-            responseBuilder.append((i+1) + ". " + user.getFirstName() + " " + user.getLastName() +
-                    " (" + user.getId() + ") " + "(пользователь: " + user.hasPermission(PermissionType.USER) +
-                    " | админ: " + user.hasPermission(PermissionType.ADMIN) + ")\n");
+            responseBuilder.append((i+1));
+            responseBuilder.append(". ");
+            responseBuilder.append(convertUserToEmoji(user));
+            responseBuilder.append(user.getFirstName());
+            responseBuilder.append(" ");
+            responseBuilder.append((user.getLastName() == null) ?  "" : user.getLastName());
+            responseBuilder.append(" (");
+            responseBuilder.append(user.getId());
+            responseBuilder.append(") ");
+            responseBuilder.append("(пользователь: ");
+            responseBuilder.append(convertBoolToEmoji(user.hasPermission(PermissionType.USER)));
+            responseBuilder.append(" | админ: ");
+            responseBuilder.append(convertBoolToEmoji(user.hasPermission(PermissionType.ADMIN)));
+            responseBuilder.append(")\n");
         }
         return responseBuilder.toString();
+    }
+
+    /**
+     * Позволяет отображать разный emoji, в зависимости от типа пользователя
+     *
+     * @param user для которого надо отобразить emoji
+     * @return unicode emoji
+     */
+    private String convertUserToEmoji(User user) {
+        if (user.hasPermission(PermissionType.ADMIN)) {
+            return "";
+        } else if (user.hasPermission(PermissionType.USER)) {
+            return "";
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Трансформирует boolean в emoji
+     *
+     * @param boolToConvert boolean, который надо превратить в emoji
+     * @return unicode emoji
+     */
+    private String convertBoolToEmoji(boolean boolToConvert) {
+        return boolToConvert ? "\u2705" : "\u274C";
     }
 
     /**

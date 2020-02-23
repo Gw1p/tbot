@@ -34,7 +34,8 @@ public class ListCommandsCommand extends Conversation {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
-            response = new Response(ResponseType.TEXT, "Список команд:\n/помощь - выдает список команд.");
+            response = new Response(ResponseType.TEXT, "Список команд:\n/помощь - выдает список команд." +
+                    "\n/статус - работает ли бот?");
 
             if (user.hasPermission(PermissionType.ADMIN)) {
                 response.setResponseText(response.getResponseText() + "\n\nКоманды админа:" +

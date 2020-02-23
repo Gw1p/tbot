@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation.commands;
 
+import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
 import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
@@ -33,7 +34,7 @@ public class StopBotCommand extends Conversation {
     }
 
     @Override
-    public Response step(String message, int messageId, User user, List<User> users) {
+    public Response step(Message message, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -47,10 +48,10 @@ public class StopBotCommand extends Conversation {
                             .selective(true));
             this.currentStep += 1;
         } else if (this.currentStep == 0) {
-            if (message.toLowerCase().equals("да")) {
+            if (message.text().toLowerCase().equals("да")) {
                 response = new Response(ResponseType.TEXT, "Останавливаю Бота.", ActionType.STOP_BOT);
                 this.currentStep += 1;
-            } else if (message.toLowerCase().equals("нет")) {
+            } else if (message.text().toLowerCase().equals("нет")) {
                 response = new Response(ResponseType.TEXT, "Отменяю.");
                 this.currentStep += 1;
             } else {

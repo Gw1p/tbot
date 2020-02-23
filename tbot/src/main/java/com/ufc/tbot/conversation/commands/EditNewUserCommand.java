@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation.commands;
 
+import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
 import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
@@ -37,7 +38,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, int messageId, User user, List<User> users) {
+    public Response step(Message message, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -45,7 +46,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
             this.currentStep += 1;
         } else if (this.currentStep == 0) {
 
-            if (message.equals("Дать " + newUser.getFirstName() + " Права Админа (+ пользователя)")) {
+            if (message.text().equals("Дать " + newUser.getFirstName() + " Права Админа (+ пользователя)")) {
 
                 try {
                     User updatedUser = (User) newUser.clone();
@@ -67,7 +68,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
 
-            } else if (message.equals("Дать " + newUser.getFirstName() + " Права Пользователя")) {
+            } else if (message.text().equals("Дать " + newUser.getFirstName() + " Права Пользователя")) {
 
                 try {
                     User updatedUser = (User) newUser.clone();
@@ -87,7 +88,7 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                             extraResponses);
                 } catch (CloneNotSupportedException ex) {}
 
-            } else if (message.equals("Ничего")) {
+            } else if (message.text().equals("Ничего")) {
 
                 response = new Response(ResponseType.TEXT, "У пользователя " +
                         newUser.getFirstName() + " нет прав для Бота.");
@@ -99,8 +100,8 @@ public class EditNewUserCommand extends Conversation implements Cloneable {
                         ResponseType.KEYBOARD,
                         "Не понял. Попробуйте еще раз.",
                         new ReplyKeyboardMarkup(
-                        new String[]{ "Дать " + user.getFirstName() + " Права Пользователя" },
-                        new String[]{ "Дать " + user.getFirstName() + " Права Админа (+ пользователя)" },
+                        new String[]{ "Дать " + newUser.getFirstName() + " Права Пользователя" },
+                        new String[]{ "Дать " + newUser.getFirstName() + " Права Админа (+ пользователя)" },
                         new String[]{ "Ничего" }
                 ).oneTimeKeyboard(true)
                         .resizeKeyboard(true)

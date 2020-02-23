@@ -1,5 +1,6 @@
 package com.ufc.tbot.conversation.commands;
 
+import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
 import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
@@ -49,7 +50,7 @@ public class EditUserCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public Response step(String message, int messageId, User user, List<User> users) {
+    public Response step(Message message, User user, List<User> users) {
         Response response = new Response(ResponseType.TEXT, "");
 
         if (this.currentStep == -1) {
@@ -64,11 +65,11 @@ public class EditUserCommand extends Conversation implements Cloneable {
 
         } else if (this.currentStep == 0) {
 
-            response = getUserOptions(message, messageId);
+            response = getUserOptions(message.text(), message.messageId());
 
         } else if (this.currentStep == 1) {
 
-            response = changeUsersPermissions(message, messageId);
+            response = changeUsersPermissions(message.text(), message.messageId());
 
         }
         return response;

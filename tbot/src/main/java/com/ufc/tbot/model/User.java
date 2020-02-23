@@ -26,6 +26,9 @@ public class User implements Serializable, Cloneable {
     @Column(name="firstMessage")
     private Date firstMessage;
 
+    @Column(name="phone")
+    private Long phone;
+
     @OneToMany(fetch = FetchType.EAGER,
             mappedBy = "user")
     private List<UserPermission> userPermissions;
@@ -60,9 +63,7 @@ public class User implements Serializable, Cloneable {
         this.firstName = firstName;
     }
 
-    public String getLastName() {
-        return lastName;
-    }
+    public String getLastName() { return lastName; }
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
@@ -83,6 +84,10 @@ public class User implements Serializable, Cloneable {
     public void setFirstMessage(Date firstMessage) {
         this.firstMessage = firstMessage;
     }
+
+    public Long getPhone() { return phone; }
+
+    public void setPhone(Long phone) { this.phone = phone; }
 
     public List<UserPermission> getUserPermissions() {
         if (this.userPermissions == null) {

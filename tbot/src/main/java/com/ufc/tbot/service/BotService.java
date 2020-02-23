@@ -89,6 +89,7 @@ public class BotService {
         LOGGER = loggerService.getLogger(BotService.class.getName(), true);
         LOGGER.info("Telegram Bot initialised");
 
+        availableCommands.add(new RequestPhoneCommand());
         availableCommands.add(new ListCommandsCommand());
         availableCommands.add(new StopBotCommand());
         availableCommands.add(new EditUserCommand());
@@ -333,7 +334,7 @@ public class BotService {
                             List<User> newUserList = new ArrayList<>();
                             newUserList.add(user);
                             editingNewUser.add(editNewUser);
-                            editNewUser.step("", -1,null, newUserList);
+                            editNewUser.step(null, users.get(userId), newUserList);
                         }
 
                         MessageIn messageIn = new MessageIn(update.message().messageId(),
@@ -371,8 +372,7 @@ public class BotService {
                             foundCommand = true;
                             Conversation lastEditNewUser = editingNewUser.get(editingNewUser.size() - 1);
                             Response response = lastEditNewUser.step(
-                                    update.message().text(),
-                                    update.message().messageId(),
+                                    update.message(),
                                     users.get(userId),
                                     new ArrayList<>()
                             );
@@ -387,8 +387,7 @@ public class BotService {
                             Conversation conversation = userInteractions.get(userChat);
                             foundCommand = true;
                             Response response = conversation.step(
-                                    update.message().text(),
-                                    update.message().messageId(),
+                                    update.message(),
                                     users.get(userId),
                                     new ArrayList<>(users.values())
                             );
@@ -397,6 +396,7 @@ public class BotService {
                                 userInteractions.remove(userChat);
                             }
                         } else if (!foundCommand) {
+
                             // Проверяем существующие команды
                             for (Conversation command : availableCommands) {
                                 LOGGER.info("Cmd " + command.getClass().getName() +
@@ -408,8 +408,7 @@ public class BotService {
                                         autowiredCapableBeanFactory.autowireBean(newCommand);
 
                                         Response response = newCommand.step(
-                                                update.message().text(),
-                                                update.message().messageId(),
+                                                update.message(),
                                                 users.get(userId),
                                                 new ArrayList<>(users.values())
                                         );

@@ -1,8 +1,17 @@
+CREATE TABLE Bots(
+	id bigint NOT NULL PRIMARY KEY,
+	bot NVARCHAR(255)
+);
+GO
+
+INSERT INTO Bots (id, bot) VALUES (1, "Production");
+INSERT INTO Bots (id, bot) VALUES (2, "Test");
+
 CREATE TABLE Users(
 	id bigint NOT NULL PRIMARY KEY,
-    firstName NVARCHAR(255),
-    lastName NVARCHAR(255),
-    username NVARCHAR(255),
+	firstName NVARCHAR(255),
+	lastName NVARCHAR(255),
+	username NVARCHAR(255),
 	firstMessage DATETIME NOT NULL,
 	phone bigint
 );
@@ -55,13 +64,15 @@ CREATE TABLE MessagesIn(
 	message NVARCHAR(max) NOT NULL,
 	messageDate DATETIME NOT NULL,
 	chatId bigint NOT NULL FOREIGN KEY REFERENCES Chats(id),
-	userId bigint NOT NULL FOREIGN KEY REFERENCES Users(id)
+	userId bigint NOT NULL FOREIGN KEY REFERENCES Users(id),
+	receivedBy bigint NOT NULL FOREIGN KEY REFERENCES Bots(id)
 );
 GO
 
 CREATE TABLE MessagesOut(
-	id bigint NOT NULL PRIMARY KEY,
+	id bigint NOT NULL PRIMARY KEY IDENTITY(1, 1),
 	chatId bigint NOT NULL FOREIGN KEY REFERENCES Chats(id),
+	messageFor bigint NOT NULL FOREIGN KEY REFERENCES Bots(id),
 	message NVARCHAR(max),
 	messageDate DATETIME,
 	sent BIT NOT NULL DEFAULT(0)

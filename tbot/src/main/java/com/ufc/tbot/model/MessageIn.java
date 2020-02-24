@@ -26,14 +26,18 @@ public class MessageIn implements Serializable {
     @Column(name = "userId")
     private long userId;
 
+    @Column(name = "receivedBy")
+    private long receivedBy;
+
     public MessageIn() {}
 
-    public MessageIn(long id, String message, Date messageDate, long chatId, long userId) {
+    public MessageIn(long id, String message, Date messageDate, long chatId, long userId, long receivedBy) {
         this.id = id;
         this.message = message;
         this.messageDate = messageDate;
         this.chatId = chatId;
         this.userId = userId;
+        this.receivedBy = receivedBy;
     }
 
     public long getId() {
@@ -76,4 +80,7 @@ public class MessageIn implements Serializable {
         this.userId = userId;
     }
 
+    public long getReceivedBy() { return receivedBy; }
+
+    public void setReceivedBy(long receivedBy) { this.receivedBy = receivedBy; }
 }

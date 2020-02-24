@@ -26,9 +26,12 @@ public class MessageOut implements Serializable {
     @Column(name = "sent")
     private boolean sent;
 
+    @Column(name = "messageFor")
+    private long messageFor;
+
     public MessageOut() {}
 
-    public MessageOut(long id, long chatId, String message, Date messageDate, boolean sent) {
+    public MessageOut(long id, long chatId, String message, Date messageDate, boolean sent, long messageFor) {
         this.id = id;
         this.chatId = chatId;
         this.message = message;
@@ -73,4 +76,8 @@ public class MessageOut implements Serializable {
     public void setSent(boolean sent) {
         this.sent = sent;
     }
+
+    public long getMessageFor() { return messageFor; }
+
+    public void setMessageFor(long messageFor) { this.messageFor = messageFor; }
 }

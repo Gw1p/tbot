@@ -55,6 +55,9 @@ public class BotService {
     @Value("${botToken}")
     private String botToken;
 
+    @Value("${botId}")
+    private int botId; // 1 для production бота, 2 для test бота
+
     private TelegramBot telegramBot;
 
     // Принимает ли бот входящие сообщения?
@@ -225,15 +228,21 @@ public class BotService {
                         for (MessageOut messageOut : awaitingMessages) {
                             int maxTries = 3;
                             for (int i = 0; i < maxTries; i++) {
-                                LOGGER.info("Attempt (" + i + ") to send message " + messageOut.getMessage() + " to chat " + messageOut.getChatId());
-                                boolean messageSuccess = sendMessage(messageOut.getChatId(), messageOut.getMessage());
+                                if (messageOut.getMessageFor() == botId) {
+                                    LOGGER.info("Attempt (" + i + ") to send message " +
+                                            messageOut.getMessage() + " to chat " + messageOut.getChatId());
+                                    boolean messageSuccess = sendMessage(
+                                            messageOut.getChatId(),
+                                            messageOut.getMessage()
+                                    );
 
-                                if (messageSuccess) {
-                                    LOGGER.info("Message sent successfully");
-                                    messageOutSuccess(messageOut);
-                                    break;
-                                } else if (i < maxTries - 1) {
-                                    LOGGER.warning("Unsuccessful, retrying");
+                                    if (messageSuccess) {
+                                        LOGGER.info("Message sent successfully");
+                                        messageOutSuccess(messageOut);
+                                        break;
+                                    } else if (i < maxTries - 1) {
+                                        LOGGER.warning("Unsuccessful, retrying");
+                                    }
                                 }
                             }
                         }
@@ -337,11 +346,14 @@ public class BotService {
                             editNewUser.step(null, users.get(userId), newUserList);
                         }
 
-                        MessageIn messageIn = new MessageIn(update.message().messageId(),
+                        MessageIn messageIn = new MessageIn(
+                                update.message().messageId(),
                                 update.message().text(),
                                 new Date(),
                                 update.message().chat().id(),
-                                update.message().from().id());
+                                update.message().from().id(),
+                                botId
+                        );
                         try {
                             messageInService.saveOrUpdate(messageIn);
                         } catch (Exception ex) {

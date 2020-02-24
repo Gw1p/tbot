@@ -1,6 +1,7 @@
 package com.ufc.tbot.conversation;
 
 import com.pengrad.telegrambot.model.Message;
+import com.ufc.tbot.model.Chat;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 
@@ -29,9 +30,10 @@ public abstract class Conversation implements Cloneable {
      *
      * @param message сообщение от пользователя
      * @param user от которого пришло сообщение
+     * @param chat из которого пришло сообщение
      * @return true/false может ли пользователь начать серию комманд?
      */
-    public abstract boolean canStart(String message, User user);
+    public abstract boolean canStart(String message, User user, Chat chat);
 
     /**
      * Закончил ли пользователь серию комманд?

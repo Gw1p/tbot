@@ -7,6 +7,7 @@ import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.model.Chat;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 import com.ufc.tbot.service.UserService;
@@ -29,8 +30,8 @@ public class RequestPhoneCommand extends Conversation {
     }
 
     @Override
-    public boolean canStart(String message, User user) {
-        return user.hasPermission(PermissionType.USER) && user.getPhone() == null;
+    public boolean canStart(String message, User user, Chat chat) {
+        return user.hasPermission(PermissionType.USER) && user.getPhone() == null && chat.getChatType().equals("Private");
     }
 
     @Override
@@ -44,7 +45,7 @@ public class RequestPhoneCommand extends Conversation {
                     "Пожалуйста, дайте свой номер телефона.",
                     new ReplyKeyboardMarkup(
                             new KeyboardButton[]{
-                                    new KeyboardButton("\u1F4DE Отправить Контакт").requestContact(true),
+                                    new KeyboardButton("\u260E Отправить Контакт").requestContact(true),
                             }
                             ),
                     message.messageId()

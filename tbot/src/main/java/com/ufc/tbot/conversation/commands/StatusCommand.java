@@ -4,6 +4,7 @@ import com.pengrad.telegrambot.model.Message;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.model.Chat;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 
@@ -21,7 +22,7 @@ public class StatusCommand extends Conversation {
     }
 
     @Override
-    public boolean canStart(String message, User user) {
+    public boolean canStart(String message, User user, Chat chat) {
         return user.hasPermission(PermissionType.USER) && message.toLowerCase().equals("/статус");
     }
 

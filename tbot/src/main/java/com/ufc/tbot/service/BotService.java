@@ -400,8 +400,12 @@ public class BotService {
                             // Проверяем существующие команды
                             for (Conversation command : availableCommands) {
                                 LOGGER.info("Cmd " + command.getClass().getName() +
-                                        " can start: " + command.canStart(update.message().text(), users.get(userId)));
-                                if (command.canStart(update.message().text(), users.get(userId))) {
+                                        " can start: " + command.canStart(
+                                                update.message().text(),
+                                                users.get(userId),
+                                                chat)
+                                );
+                                if (command.canStart(update.message().text(), users.get(userId), chat)) {
                                     try {
                                         foundCommand = true;
                                         Conversation newCommand = (Conversation) command.clone();
@@ -416,6 +420,7 @@ public class BotService {
                                         if (!newCommand.finished()) {
                                             userInteractions.put(userChat, newCommand);
                                         }
+                                        break;
                                     } catch (CloneNotSupportedException e) {
                                         e.printStackTrace();
                                     }

@@ -6,6 +6,7 @@ import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.model.Chat;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 
@@ -24,7 +25,7 @@ public class StopBotCommand extends Conversation {
     }
 
     @Override
-    public boolean canStart(String message, User user) {
+    public boolean canStart(String message, User user, Chat chat) {
         if (user.hasPermission(this.minimumPermissions) &&
                 (message.toLowerCase().equals("/stop") || message.toLowerCase().equals("/стоп"))) {
             return true;

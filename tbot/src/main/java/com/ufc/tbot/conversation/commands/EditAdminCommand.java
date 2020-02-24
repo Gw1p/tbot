@@ -6,6 +6,7 @@ import com.ufc.tbot.conversation.ActionType;
 import com.ufc.tbot.conversation.Conversation;
 import com.ufc.tbot.conversation.Response;
 import com.ufc.tbot.conversation.ResponseType;
+import com.ufc.tbot.model.Chat;
 import com.ufc.tbot.model.PermissionType;
 import com.ufc.tbot.model.User;
 import com.ufc.tbot.service.UserService;
@@ -39,7 +40,7 @@ public class EditAdminCommand extends Conversation implements Cloneable {
     }
 
     @Override
-    public boolean canStart(String message, User user) {
+    public boolean canStart(String message, User user, Chat chat) {
         return message.startsWith("/админ") && user.hasPermission(PermissionType.ADMIN);
     }
 

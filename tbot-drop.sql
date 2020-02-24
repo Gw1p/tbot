@@ -18,3 +18,6 @@ GO
 
 DROP TABLE Users;
 GO
+
+DROP TABLE Bots;
+GO

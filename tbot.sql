@@ -6,6 +6,7 @@ GO
 
 INSERT INTO Bots (id, bot) VALUES (1, "Production");
 INSERT INTO Bots (id, bot) VALUES (2, "Test");
+INSERT INTO Bots (id, bot) VALUES (3, "Local Test");
 
 CREATE TABLE Users(
 	id bigint NOT NULL PRIMARY KEY,
@@ -65,14 +66,14 @@ CREATE TABLE MessagesIn(
 	messageDate DATETIME NOT NULL,
 	chatId bigint NOT NULL FOREIGN KEY REFERENCES Chats(id),
 	userId bigint NOT NULL FOREIGN KEY REFERENCES Users(id),
-	receivedBy bigint NOT NULL FOREIGN KEY REFERENCES Bots(id)
+	receivedBy bigint NOT NULL FOREIGN KEY REFERENCES Bots(id) -- какой бот получил сообщение?
 );
 GO
 
 CREATE TABLE MessagesOut(
 	id bigint NOT NULL PRIMARY KEY IDENTITY(1, 1),
 	chatId bigint NOT NULL FOREIGN KEY REFERENCES Chats(id),
-	messageFor bigint NOT NULL FOREIGN KEY REFERENCES Bots(id),
+	messageFor bigint NOT NULL FOREIGN KEY REFERENCES Bots(id), -- какой бот должен отправить это сообщение?
 	message NVARCHAR(max),
 	messageDate DATETIME,
 	sent BIT NOT NULL DEFAULT(0)

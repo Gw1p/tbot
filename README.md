@@ -1,65 +1,56 @@
-# TBot
+# TBot (Telegram Bot)
 
-Проект по разработке Telegram Bot, бота для приложения по обмену сообщениями -  [Telegram](https://telegram.org/).
+TBot repo contains a Java application that provides a wide range of functionalities for a [Telegram Bot](https://core.telegram.org/bots).
 
-Бот контролирует интеракции пользователей в Telegram и дает юзерам доступ к необходимому, дистанционному функционалу.
+☕ TBot can chat with users in Telegram. Additionally, it provides a class hierarchy for defining custom `commands` that allow you to create interactions with users of high complexity from scratch. 
 
-## Для чего TBot?
+Whether you want to create a bot that allows users to interact with your API, are looking for a telegram bot template that allows you to define conversation flows that are out of the box and/or include a complex combination of inline-queries, keyboards and others, then this project can help you get started.
 
-Этот Бот разрабатывается чтобы мониторить сообщения в чатах Telegram.
-Являясь обычным членом чата, пользователи могут посылать сообщения Боту, на которые он может реагировать.
-Бот также может читать сообщения из групповых чатов.
 
-Все сообщения, зафиксированные Ботом, записываются в дистанционную SQL БД.
-В этой же БД, программа следит за специальной таблицей, в которой периодически появляются новые записи.
-Именно новые записи, оставленные сторонней программой, дают Боту понять кому и какое сообщение надо отправить.
+## Default Commands
 
-## Доступные Комманды
+By default, TBot comes with 3 sample commands:
 
-- /помощь - выдает список доступных комманд
-- /пользователи - позволяет админам изменять права пользователей
-- /стоп - позволяет админам остановить работу бота
+- /help - lists all available commands
+- /status - prints the status of the bot
+- /stop - stops TBot (admin only)
 
-## Известные Проблемы/Баги и Задачи
+## TODO:
 
-Проблемы/Баги:
-- на текущий момент - никаких проблем.
+- all documentation in the project is written in Russian (sorry), would be good to redo this in English
+- add more meaningful commands
+- make TBot robust to command errors and heal/automatically restart upon failure
+- many more...
 
-## Требования
+## Dependencies
 
 - Java 11
 - Spring 2.2.4
 - (java-telegram-bot-api v4.6.0)[https://github.com/pengrad/java-telegram-bot-api]
-- Имеет постоянный открытый канал с SQL БД.
-- Исходный репозиторий проекта, взятого за основу: https://github.com/pengrad/java-telegram-bot-api.
+- [Jakarta XML Binding API (2.3.2)](https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api/2.3.2)
+- [JAXB Runtime (2.3.2)](https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime/2.3.2)
+- connection to an SQL DB (but you can rewrite it to use anything else).
+- Source repo, which this project is based on [https://github.com/pengrad/java-telegram-bot-api](https://github.com/pengrad/java-telegram-bot-api).
+
+See `./build.gradle` for a full list of dependencies.
 
 ## Deployment
 
-- добавить `logPath` в `application.properties` с путем к лог файлу (без расширения, дата будет добавлена автоматически)
-- добавить `botToken` в `application.properties` с токеном бота
-- настроить и добавить следующие конфигурации в `application.properties`:
-```
-	spring.datasource.url=<jdbc-link>
-	spring.datasource.username=<database-username>
-	spring.datasource.password=<database-password>
-	spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
-	spring.jpa.show-sql=true
-	spring.jpa.properties.hibernate.format_sql=true
-	spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
-	spring.jpa.hibernate.ddl-auto=update
-```
+- create a new Telegram bot and obtain a token using [BotFather](https://core.telegram.org/bots#6-botfather)
+- download and unzip the TBot repo
+- insert the bot token into `application.properties`
+- create a database and populate it with tables that are defined in `tbot.sql`
+- paste the database config to `application.properties` (`spring.datasource.url=jdbc:sqlserver://localhost;databaseName=<db-name>;useUnicode=true&characterEncoding=utf-8`, `spring.datasource.username=<db-username>` and
+`spring.datasource.password=<db-password>`
+- build and run the application (remember, you have to message the bot first before it can send you any messages!)
 
-На текущий момент, работает как сервис `tbot` на Linux сервере.
-Для обновления программы, создайте новый build (например, `tbot-0.0.1-SNAPSHOT.jar`) и скопируйте его (например, используя `scp`) на сервер под `/home/anton/tbot`.
-Скрипт `/home/anton/tbot/start.sh` задает комманду, с помощью которой сервис запускает приложение.
+## Adding New Commands
 
-## Добавление новых комманд
-
-Все комманды находятся в `com.ufc.tbot.conversation.commands`. Каждая комманда наследует у суперкласса `Conversation`.
+All commands are in `com.ufc.tbot.conversation.commands`. Every command inherits from `Conversation` base class.
 
 
-Чтобы создать новую комманду, необходимо определить переменные `currentStep` (обычно `-1`), `maxSteps` (максимальное количество шагов в комманде, используется для отслеживания прогресса) и `minimumPermissions` (минимальные права для начала комманды).
-Также необходимо задать метод `boolean canStart(String message, User user)`. Этот метод должен вернуть `true` в случаях, когда данный `user` может начать комманду с сообщением `message`.
+To create a new command, you need to define variables `currentStep` (typically `-1`), `maxSteps` (number of steps required for the command to finish) and `minimumPermissions` (minimum permissions required to initialise the command).
+You also need to define method `boolean canStart(String message, User user)`. This method has to return `true` when the given `user` can start the command with the given `message`.
 
 
 Напоследок, `Response step(String message, User user, List<User> users)` определяет что делает комманда.

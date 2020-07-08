@@ -18,6 +18,7 @@ CREATE TABLE Users(
 );
 GO
 
+
 CREATE TABLE Permissions(
 	id int NOT NULL PRIMARY KEY,
 	permission NVARCHAR(255) NOT NULL
@@ -76,6 +77,7 @@ CREATE TABLE MessagesOut(
 	messageFor bigint NOT NULL FOREIGN KEY REFERENCES Bots(id), -- какой бот должен отправить это сообщение?
 	message NVARCHAR(max),
 	messageDate DATETIME,
-	sent BIT NOT NULL DEFAULT(0)
+	sent BIT NOT NULL DEFAULT(0),
+	failed BIT NOT NULL DEFAULT(0)
 );
 GO

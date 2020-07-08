@@ -6,6 +6,15 @@ TBot repo contains a Java application that provides a wide range of functionalit
 
 Whether you want to create a bot that allows users to interact with your API, are looking for a telegram bot template that allows you to define conversation flows that are out of the box and/or include a complex combination of inline-queries, keyboards and others, then this project can help you get started.
 
+## Overview
+
+The project follows the MVC pattern. 
+
+`TbotApplication` runs launches an `AppController` that is responsible for starting `BotService`. The `BotService`, in turn, handles incoming and outgoing messages.
+
+The required table structure is located in `tbot.sql`. Any changes to that will, in turn, require changes in the code.
+
+The bot comes with 2 types of user permissions: `ADMIN` and `USER`.
 
 ## Default Commands
 
@@ -20,6 +29,7 @@ By default, TBot comes with 3 sample commands:
 - all documentation in the project is written in Russian (sorry), would be good to redo this in English
 - add more meaningful commands
 - make TBot robust to command errors and heal/automatically restart upon failure
+- provide default methods for requesting contact details, sending images and processing inline-queries
 - many more...
 
 ## Dependencies
@@ -46,26 +56,20 @@ See `./build.gradle` for a full list of dependencies.
 
 ## Adding New Commands
 
-All commands are in `com.ufc.tbot.conversation.commands`. Every command inherits from `Conversation` base class.
+All commands are in `com.gw1p.tbot.conversation.commands`. Every command inherits from `Conversation` base class.
 
 
 To create a new command, you need to define variables `currentStep` (typically `-1`), `maxSteps` (number of steps required for the command to finish) and `minimumPermissions` (minimum permissions required to initialise the command).
-You also need to define method `boolean canStart(String message, User user)`. This method has to return `true` when the given `user` can start the command with the given `message`.
+You also need to define the method `boolean canStart(String message, User user)`. This method has to return `true` when the given `user` can start the command with the given `message`.
 
 
-Напоследок, `Response step(String message, User user, List<User> users)` определяет что делает комманда.
-Все новые комманды надо добавить в `BotService.init()` в список `availableCommands`.
+Lastly, `Response step(String message, User user, List<User> users)` defines how command processes user messages (given that it has started before).
+All new commands should be added to `BotService.init()` in the list `availableCommands`.
 
 ---
 
-`Response` позволяет Боту понять, что необходимо сделать, как результат комманды.
-С помощью этого объекта, можно отправить пользователю сообщение (включая кастомную клавиатуру), а также выполнить дополнительные действия (например, обновить пользователя в БД).
+`Response` allows the Bot to understand how to act (for example, send a text message, send a keyboard, etc). Using this object, you may also execute additional actions (i.e. update a record in the DB).
 
-## Тестирование
+## Testing
 
-- добавленные тесты используются автоматически при создании нового build
-
-## Стиль Кода
-
-[Google Java Style](https://google.github.io/styleguide/javaguide.html)
-Пожалуйста, поддерживайте качество кода на необходимом уровне!
+Some basic DAO tests are included and run automatically when you build. These mainly test that constring, saving and deleting works.
